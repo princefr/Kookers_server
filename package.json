@@ -1,0 +1,29 @@
+{
+  "name": "serverkookers",
+  "version": "1.0.0",
+  "description": "server testing",
+  "main": "index.js",
+  "dependencies": {
+    "apollo-server": "^2.17.0",
+    "apollo-server-express": "^2.17.0",
+    "bignumber.js": "^9.0.1",
+    "dataloader": "^2.0.0",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.4.2",
+    "graphql": "^15.3.0",
+    "graphql-scalars": "^1.2.6",
+    "mongoose": "^5.10.3",
+    "ngeohash": "^0.6.3",
+    "ramda": "^0.27.1",
+    "require": "^2.4.20",
+    "stripe": "^8.102.0",
+    "underscore": "^1.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "Prince Ondonda",
+  "license": "ISC"
+}
