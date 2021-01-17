@@ -4,6 +4,7 @@ const express = require('express')
 const {DateResolver, EmailAddressResolver, PhoneNumberResolver} = require("graphql-scalars")
 const {resolvers}  = require("./resolvers")
 const {typeDefs} = require("./typeDefs")
+var path = require('path')
 
 
 
@@ -37,7 +38,7 @@ const server = new ApolloServer({
 
 
 app.get('/', function (req, res) {
-  res.send('Hello World!');
+  res.sendFile(path.join(__dirname + '/public/index.html'));
 });
 
 
