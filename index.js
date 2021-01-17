@@ -41,7 +41,7 @@ const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
 
-httpServer.listen({port: PORT}, (url) => {
+httpServer.listen({port: PORT}).then(function(url){
   console.log(`🚀 Server ready at ${url}`)
 })
 
