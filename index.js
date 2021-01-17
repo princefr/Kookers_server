@@ -42,6 +42,6 @@ server.installSubscriptionHandlers(httpServer);
 
 
 httpServer.listen({port: PORT}, (url) => {
-  console.log(`🚀 Server ready at $url`)
+  console.log(`🚀 Server ready at ${url}`)
 })
 
