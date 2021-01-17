@@ -35,13 +35,7 @@ const server = new ApolloServer({
 })
 
 
-server.applyMiddleware({app});
-
-const httpServer = http.createServer(app);
-server.installSubscriptionHandlers(httpServer);
-
-
-httpServer.listen({port: PORT}, ({url}) => {
-  console.log(`🚀 Server ready at ${url}`)
+server.listen({port: PORT}).then(({url}) => {
+  console.log(`the server is runing at ${url}`)
 })
 
