@@ -16,7 +16,7 @@ const {UsersDataloader, MessagesDataloader, PublicationDataloader} = require("./
 // express server
 const app = express()
 
-const PORT = process.env.PORT_graphql || 4000;
+const PORT = 80;
 
 const server = new ApolloServer({
   typeDefs,
