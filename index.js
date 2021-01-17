@@ -15,6 +15,7 @@ const {UsersDataloader, MessagesDataloader, PublicationDataloader} = require("./
 
 // express server
 const app = express()
+const router = express.Router();
 
 const PORT = process.env.PORT || 4000;
 
@@ -33,6 +34,14 @@ const server = new ApolloServer({
     })
 
 })
+
+
+router.use("/", function(req, res, next) {
+  res.render('yeahhhh connected');
+})
+
+
+app.use('/', router)
 
 
 
