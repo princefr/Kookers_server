@@ -16,21 +16,21 @@ const {UsersDataloader, MessagesDataloader, PublicationDataloader} = require("./
 // express server
 const app = express()
 
-const PORT = 4000;
+const PORT = process.env.PORT_graphql;
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   subscriptions: {
     onConnect: (connectionParams, webSocket) => {}},
-  context: (req) => ({
-    authScope: req.req,
-    loaders: {
-      usersLoader: UsersDataloader(),
-      messagesLoader: MessagesDataloader(),
-      publicationsLoader: PublicationDataloader()
-    }
-  })
+    context: (req) => ({
+      authScope: req.req,
+      loaders: {
+        usersLoader: UsersDataloader(),
+        messagesLoader: MessagesDataloader(),
+        publicationsLoader: PublicationDataloader()
+      }
+    })
 
 })
 
