@@ -36,12 +36,9 @@ const server = new ApolloServer({
 })
 
 
-router.use("/", function(req, res, next) {
-  res.render('yeahhhh connected');
-})
-
-
-app.use('/', router)
+app.get('/', function (req, res) {
+  res.send('Hello World!');
+});
 
 
 
