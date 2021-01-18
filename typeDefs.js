@@ -382,7 +382,7 @@ const typeDefs = gql`
     id: String
     object: String
     account_holder_name: String
-    account_holder_type String
+    account_holder_type: String
     bank_name: String
     country: String
     currency: String
