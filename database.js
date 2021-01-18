@@ -272,6 +272,13 @@ async function createStripeCustomer(email) {
   return bankAccount
  }
 
+ async function listExternalAccount(account_id) {
+  const accountBankAccounts = await stripe.accounts.listExternalAccounts(
+    account_id
+  );
+  return accountBankAccounts.data
+ }
+
 
  async function MakePayout(account_id, amount, currency) {
   const payout = await stripe.payouts.create({
@@ -671,5 +678,5 @@ async function updateUserAdresses(userId, adresses){
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller,
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
-         updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder, updateDefaultSource, createBankAccountOnConnect, MakePayout}
+         updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder, updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount}
 

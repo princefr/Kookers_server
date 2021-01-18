@@ -7,7 +7,7 @@ const {createNewPublication, createNewUser, checkUserExist,
      RateOrder, createReport,
       getConnecedAccountBalance, getPublicationsOwnedByUser,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
-       updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder, refuseOrder, updateDefaultSource} = require("./database");
+       updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder, refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount} = require("./database");
 
 const _ = require('underscore');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -165,6 +165,16 @@ const resolvers = {
     getAllCardsForCustomer: async(_, {customer_id}) => {
       return  loadCartList(customer_id)
     },
+
+    getPayoutList: async(_, {accountId}) => {
+      return  PayoutList(accountId)
+    },
+
+    listExternalAccount: async(_, {accountId}) => {
+      return  listExternalAccount(accountId)
+    },
+
+    
     
   },
 
@@ -254,6 +264,18 @@ const resolvers = {
     updateDefaultSource: async(_, {userId, source}) => {
       return updateDefaultSource(userId, source)
     },
+
+
+    makePayout: async(_, {account_id, amount, currency,}) => {
+      return MakePayout(account_id, amount, currency)
+    },
+
+    createBankAccountOnConnect: async(_, {account_id, country, currency, account_number}) => {
+      return createBankAccountOnConnect(account_id, country, currency, account_number)
+    },
+
+
+    
 
 
 

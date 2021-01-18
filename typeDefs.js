@@ -378,6 +378,18 @@ const typeDefs = gql`
   }
 
 
+  type BankAccount {
+    id: String
+    object: String
+    account_holder_name: String
+    account_holder_type String
+    bank_name: String
+    country: String
+    currency: String
+    last4: String
+  }
+
+
 
   # The "Query" type is special: it lists all of the available queries that
   # clients can execute, along with the return type for each. In this
@@ -399,6 +411,8 @@ const typeDefs = gql`
     getOrderOwnedBuyer(userId: String): [Order]!
     getOrderOwnedSeller(userId: String): [Order]!
     getAllCardsForCustomer(customer_id: String!): [CreditCard]!
+    getPayoutList(accountId: String!): [Payout]!
+    listExternalAccount(accountId: String!): [BankAccount]!
     
 
   }
