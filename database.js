@@ -279,8 +279,13 @@ async function createStripeCustomer(email) {
 
  async function getConnecedAccountBalance(acount_id){
    const account  = await stripe.balance.retrieve({stripeAccount: acount_id}).catch(err => {console.log(err)})
-   
    return {current_balance: account.available[0].amount, pending_balance: account.pending[0].amount, currency: account.available[0].currency}
+ }
+
+
+ async function getBalanceTransaction(accountId){
+   const transactions =  await stripe.balanceTransactions.list({stripeAccount: accountId}).catch(err => {console.log(err)})
+   return transactions.data
  }
 
  async function createBankAccountOnConnect(account_id, country, currency, account_number){
@@ -716,5 +721,6 @@ async function updateUserAdresses(userId, adresses){
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller,
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
-         updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder, updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount}
+         updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
+          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction}
 

@@ -390,6 +390,22 @@ const typeDefs = gql`
   }
 
 
+  type TransactionStripe {
+    id: String!
+    object: String
+    amount: Float
+    available_on: Int
+    created: Int
+    currency: String
+    description: String
+    fee: Int
+    net: Int
+    reporting_category: String
+    type: String
+    status: String
+  }
+
+
 
   # The "Query" type is special: it lists all of the available queries that
   # clients can execute, along with the return type for each. In this
@@ -413,6 +429,7 @@ const typeDefs = gql`
     getAllCardsForCustomer(customer_id: String!): [CreditCard]!
     getPayoutList(accountId: String!): [Payout]!
     listExternalAccount(accountId: String!): [BankAccount]!
+    getBalanceTransaction(accountId: String!): [TransactionStripe]!
     
 
   }
