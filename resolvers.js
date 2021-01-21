@@ -7,7 +7,7 @@ const {createNewPublication, createNewUser, checkUserExist,
      RateOrder, createReport,
       getConnecedAccountBalance, getPublicationsOwnedByUser,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
-       updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder, refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount} = require("./database");
+       updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder, refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount, createBankAccountOnConnect} = require("./database");
 
 const _ = require('underscore');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -167,6 +167,7 @@ const resolvers = {
     },
 
     getPayoutList: async(_, {accountId}) => {
+      console.log("loading payout list")
       return  PayoutList(accountId)
     },
 

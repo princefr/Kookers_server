@@ -1,15 +1,28 @@
  const mongoose = require('mongoose');
  const admin = require("firebase-admin")
  const credentialFirebase = require("./admin_credentials.json");
- const stripe = require("stripe")("sk_test_bfpeBAEHNGBlBq58U2P5oKKC");
+ const stripe = require("stripe")("sk_test_51623aEF9cRDonA7mdWZMgKJ7lVKjYwnKZmZLra2vdJSkrIrfYOe6uXRpZHS0kAYgdQOQBJRaw0hqgznFLP52Oal400AvkyDjeO");
  const DataLoader = require("dataloader");
  const {groupBy, map} = require("ramda");
-
+ var moment = require('moment');
 
  mongoose.set('useNewUrlParser', true);
  mongoose.set('useFindAndModify', false);
  mongoose.set('useCreateIndex', true);
  mongoose.set('useUnifiedTopology', true);
+
+ const NodeGeocoder = require('node-geocoder');
+ 
+const options = {
+  provider: 'google',
+ 
+  // Optional depending on the providers
+
+  apiKey: 'AIzaSyAbJoAWoANYPFagvaiNOAd8vJZGY7SV0Hs', // for Mapquest, OpenCage, Google Premier
+  formatter: null // 'gpx', 'string', ...
+};
+
+const geocoder = NodeGeocoder(options);
 
  admin.initializeApp({
   credential: admin.credential.cert(credentialFirebase),
@@ -38,7 +51,7 @@ var LocationSchema = new Schema({
 
 var Adress = new Schema({
   title: String,
-  location: [LocationSchema],
+  location: LocationSchema,
   is_chosed: Boolean
 }, { _id : false })
 
@@ -190,10 +203,10 @@ async function createStripeCustomer(email) {
     amount: total,
     currency: currency,
     customer : customer,
-    description: "Kookers - ",
+    description: "Kookers commande- ",
     payment_method: paymentmethod,
     confirm: false,
-    receipt_email: "",
+    receipt_email: "pondonda@gmail.com",
     application_fee_amount: parseInt(percentage(30, total)),
     transfer_data: {
       destination: connectedAccount,
@@ -230,17 +243,27 @@ async function createStripeCustomer(email) {
 
 
 
+
+
  async function createStripeCustomAccount(user, ip){
+  const res_geocode = await geocoder.geocode(user.adresses[0].title);
   const account = await stripe.accounts
-  .create({type: 'custom', country: user.country, email: user.email, capabilities: {transfers: {requested: true},}, business_type: "individual", individual: {
-    address : user.adresses[0].title,
+  .create({type: 'custom',  country: user.country, email: user.email,
+   capabilities: {transfers: {requested: true},}, tos_acceptance: {
+    ip: ip,
+    date: Math.floor(Date.now() / 1000),
+  }, business_type: "individual", individual : {
+    address : {
+      city: res_geocode[0].city,
+      country: user.country,
+      line1: res_geocode[0].streetNumber + " " + res_geocode[0].streetName,
+      postal_code: res_geocode[0].zipcode,
+      state: res_geocode[0].administrativeLevels.level1long
+    },
     email: user.email,
     first_name: user.first_name,
     last_name: user.last_name,
     phone: user.phonenumber
-  }, tos_acceptance: {
-    ip: ip,
-    service_agreement: "recipient",
   }
 })
   .catch(err => {console.log(err)})
@@ -293,8 +316,8 @@ async function createStripeCustomer(email) {
 
 
  async function PayoutList(account_id) {
-  const payouts = await stripe.payouts.list({}, {stripeAccount: account_id,});
-  return payouts
+  const payouts = await stripe.payouts.list({stripeAccount: account_id,});
+  return payouts.data
  }
 
 
@@ -373,7 +396,7 @@ async function checkUserExist(firebase_uid){
 
 async function getUserById(userId) {
   const User = mongoose.model('User', UserSchema);
-  return User.findById(userId)
+  return User.findOne({"_id": userId})
 }
 
 
@@ -458,9 +481,9 @@ async function updateUserAdresses(userId, adresses){
 
 
 
- async function getPublicationViaGeohash(isGreaterThanOrEqualToValue, isLessThanOrEqualTo, userId) {
+ async function getPublicationViaGeohash(lowervalue, greathervalue, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
-  return  Publication.find().where("geohash").gte(isGreaterThanOrEqualToValue).lte(isLessThanOrEqualTo).exec()
+  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}}).exec()
  }
 
  async function getPublicationsOwnedByUser(userId){
@@ -486,12 +509,15 @@ async function updateUserAdresses(userId, adresses){
  /////// order handling
 
  async function createNewOrder(order_input) {
+   const seller = await getUserById(order_input.sellerId)
    const Order = mongoose.model("Order", OrderSchema)
-   const paymentIntent = await createPaymentIntent(order_input.total_price * 100, order_input.currency, order_input.payment_method_id, order_input.seller_stripe_account, order_input.customerId).catch((err) => {throw err})
+   const paymentIntent = await createPaymentIntent(order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId).catch((err) => {throw err})
+   
    order_input.stripeTransactionId = paymentIntent.id
    order_input.fees = parseInt(percentage(30, order_input.total_price))
    const order = new Order(order_input)
    await order.save().catch(err => {console.log(err)})
+   sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande")
    return true
  }
 
@@ -649,8 +675,20 @@ async function updateUserAdresses(userId, adresses){
   const message = {
     notification: {
       title: title,
-      body: body
+      body: body,
     },
+    apns: {
+      payload : {
+        aps : {
+          sound:"default"
+        }
+      }
+  } ,
+    android: {
+      notification: {
+        sound: "default"
+      }
+    }, 
     token: registrationToken
   };
    const notif = await admin.messaging().send(message)

@@ -245,7 +245,7 @@ const typeDefs = gql`
   type Room {
     _id: ID!
     createdAt: String!
-    updateAt: String!
+    updatedAt: String!
     last_message: String
     messages: [Message]
     notificationCountUser_1: Int
@@ -445,7 +445,7 @@ const typeDefs = gql`
     refuseOrder(order: OrderInput): Order!
     acceptOrder(order: OrderInput): Order!
     updateDefaultSource(userId: String!, source: String!): String!
-    createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): String!
+    createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: String!, currency: String!): Payout
 
   }
