@@ -639,6 +639,13 @@ async function updateUserAdresses(userId, adresses){
  }
 
 
+ async function updateAllMessageForUser(userID, roomId) {
+  const Message = mongoose.model("Message", MessageSchema)
+  const messages = await Message.update({"roomId": roomId, "userId" : {$ne: userID}, "is_read": true}, {$set : {"is_read": true}})
+  return messages
+ }
+
+
  function MessagesDataloader() {
   return new DataLoader(LoadallMessageForRoombyIds)
 }

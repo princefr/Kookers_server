@@ -24,6 +24,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   subscriptions: {
+    keepAlive: 30000,
     onConnect: (connectionParams, webSocket) => {}},
     context: (req) => ({
       authScope: req.req,
