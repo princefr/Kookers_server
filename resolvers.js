@@ -71,7 +71,7 @@ const resolvers = {
       subscribe: withFilter(
         () => pubsub.asyncIterator(['MESSAGE_ADDED']),
         (payload, args) => {
-          return payload.orderUpdated.id == args.roomID
+          return payload.messageAdded.roomId == args.roomID
         })
     },
 
@@ -220,6 +220,7 @@ const resolvers = {
 
 
     sendMessage: async(_, {message}) => {
+      console.log(message)
       pubsub.publish('MESSAGE_ADDED', { messageAdded: message });
       const messageFromDB = createMessage(message)
       

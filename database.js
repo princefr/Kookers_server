@@ -118,6 +118,8 @@ var Rating = new Schema({
    createdAt: { type: String, default: new Date().toISOString() },
    userId: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
    message: {type: String, required: true},
+   is_sent: {type: Boolean, default: true},
+   is_read: {type: Boolean, default: false},
    message_photo: String
  })
 

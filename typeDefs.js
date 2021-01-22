@@ -205,6 +205,7 @@ const typeDefs = gql`
     publication: Publication
     seller: User
     buyer: User
+    currency: String
   }
 
 
@@ -223,7 +224,7 @@ const typeDefs = gql`
 
   input MessageInput {
     id: ID
-    createdAt: String
+    createdAt: String!
     message: String!
     userId: String!
     roomId: ID!
@@ -238,6 +239,8 @@ const typeDefs = gql`
     userId: String!
     roomId: ID!
     message_picture: String
+    is_sent: Boolean
+    is_read: Boolean
   }
 
 
