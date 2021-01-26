@@ -8,9 +8,10 @@ const {createNewPublication, createNewUser, checkUserExist,
       getConnecedAccountBalance, getPublicationsOwnedByUser,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
-        refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount, createBankAccountOnConnect, getBalanceTransaction} = require("./database");
+        refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
+         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser} = require("./database");
 
-const _ = require('underscore');
+const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
 const BigNumber = require('bignumber.js');
 
@@ -75,6 +76,23 @@ const resolvers = {
         })
     },
 
+    messageRead : {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(['MESSAGE_READ']),
+        (payload, args) => {
+          return payload.roomId == args.roomID && payload.userID != args.listener
+      })
+    },
+
+
+    userIsWriting : {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(['USER_IS_WRITING']),
+        (payload, args) => {
+          return payload.orderUpdated.id == args.id
+      })
+    },
+
     orderUpdated : {
       subscribe: withFilter(
         () => pubsub.asyncIterator(['ORDER_UPDATED']),
@@ -95,7 +113,7 @@ const resolvers = {
     receiver(parent, args, context) {
       const { loaders } = context
       const {usersLoader} = loaders
-      const users = _.without(parent.users, args.id)
+      const users = parent.users.filter((e) => {return e != context.authScope.body.variables.uid}) 
       return usersLoader.load(users[0])
     }
   },
@@ -120,7 +138,7 @@ const resolvers = {
     buyer(parent, args, context){
       const { loaders } = context
       const {usersLoader} = loaders
-      return usersLoader.load(parent.sellerId)
+      return usersLoader.load(parent.buyerID)
     },
 
 
@@ -168,7 +186,6 @@ const resolvers = {
     },
 
     getPayoutList: async(_, {accountId}) => {
-      console.log("loading payout list")
       return  PayoutList(accountId)
     },
 
@@ -206,7 +223,7 @@ const resolvers = {
     },
 
     cancelOrder: async(_, {order}) => {
-      pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
+      //pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
       return cancelOrderStripe(order)
     },
 
@@ -220,7 +237,6 @@ const resolvers = {
 
 
     sendMessage: async(_, {message}) => {
-      console.log(message)
       pubsub.publish('MESSAGE_ADDED', { messageAdded: message });
       const messageFromDB = createMessage(message)
       
@@ -284,6 +300,16 @@ const resolvers = {
     createBankAccountOnConnect: async(_, {account_id, country, currency, account_number}) => {
       return createBankAccountOnConnect(account_id, country, currency, account_number)
     },
+
+
+    updateAllMessageForUser: async(_, {userID, roomId}) => {
+      pubsub.publish('MESSAGE_READ', { roomId: roomId, userID: userID});
+      return updateAllMessageForUser(userID, roomId)
+    },
+
+
+
+    
 
 
     

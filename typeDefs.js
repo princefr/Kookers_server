@@ -229,6 +229,7 @@ const typeDefs = gql`
     userId: String!
     roomId: ID!
     message_picture: String
+    receiver_push_token: String
   }
 
 
@@ -254,7 +255,7 @@ const typeDefs = gql`
     notificationCountUser_1: Int
     notificationCountUser_2: Int
     users: [String!]!
-    receiver(id: String): User
+    receiver: User
 
   }
 
@@ -409,6 +410,12 @@ const typeDefs = gql`
   }
 
 
+  type IsRead {
+    roomId: String,
+    isRead: String
+  }
+
+
 
   # The "Query" type is special: it lists all of the available queries that
   # clients can execute, along with the return type for each. In this
@@ -416,8 +423,11 @@ const typeDefs = gql`
 
   type Subscription {
     messageAdded(roomID: ID!): Message
+    messageRead(roomID: ID!, listener: String): Boolean
+    userIsWriting(roomID: ID!): Boolean
     orderUpdated(id: ID!): Order
     roomUpdated(id: ID!): Room
+    
   }
 
   type Query {
@@ -456,6 +466,7 @@ const typeDefs = gql`
 
     createChatRoom(user1: String!, user2: String!): Room!
     sendMessage(message: MessageInput): Boolean!
+    updateAllMessageForUser(userID:String, roomId: String): Boolean!
 
     addattachPaymentToCustomer(customer_id: String!, methode_id: String!): PaymentMethod
     updateUserImage(userID: String!, imageUrl: String!): User!
@@ -467,6 +478,8 @@ const typeDefs = gql`
     updateDefaultSource(userId: String!, source: String!): String!
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: String!, currency: String!): Payout
+
+    
 
   }
 

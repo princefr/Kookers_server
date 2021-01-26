@@ -12,6 +12,7 @@
     "firebase-admin": "^9.4.2",
     "graphql": "^15.3.0",
     "graphql-scalars": "^1.2.6",
+    "lodash": "^4.17.20",
     "moment": "^2.29.1",
     "mongoose": "^5.10.3",
     "ngeohash": "^0.6.3",

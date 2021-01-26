@@ -117,6 +117,7 @@ var Rating = new Schema({
    roomId: {type: Schema.Types.ObjectId, required: true, ref: 'Rooms'},
    createdAt: { type: String, default: new Date().toISOString() },
    userId: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
+   message_picture: {type : String},
    message: {type: String, required: true},
    is_sent: {type: Boolean, default: true},
    is_read: {type: Boolean, default: false},
@@ -392,7 +393,6 @@ async function uploadOneFile(file_data){
 
    const user = new User(user_input)
    const saved = await user.save().catch(err => {console.log(err)})
-   console.log(saved)
    return saved
 }
 
@@ -496,7 +496,6 @@ async function updateUserAdresses(userId, adresses){
  async function getPublicationsOwnedByUser(userId){
   const Publication = mongoose.model("Publication", PublicationSchema)
   const pub = Publication.find().where("sellerId").equals(userId).exec()
-  console.log(await pub)
   return pub
  }
 
@@ -524,7 +523,7 @@ async function updateUserAdresses(userId, adresses){
    order_input.fees = parseInt(percentage(30, order_input.total_price))
    const order = new Order(order_input)
    await order.save().catch(err => {console.log(err)})
-   sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande")
+   sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande", "new_order")
    return true
  }
 
@@ -592,7 +591,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function UpdateOrder(order, with_refound) {
    const Order = mongoose.model("Order", OrderSchema)
-   if(with_refound){
+   if(with_refound == false){
     await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt})
    }else{
     await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId})
@@ -628,6 +627,7 @@ async function updateUserAdresses(userId, adresses){
    const Message = mongoose.model("Message", MessageSchema)
    const message = new Message(messageInput)
    const saved = await message.save().catch(err => {console.log(err)})
+   sendNotification(messageInput.receiver_push_token, "Nouveau message", "Vous avez recu un nouveau message", "new_message")
    return  saved
  }
 
@@ -641,8 +641,8 @@ async function updateUserAdresses(userId, adresses){
 
  async function updateAllMessageForUser(userID, roomId) {
   const Message = mongoose.model("Message", MessageSchema)
-  const messages = await Message.update({"roomId": roomId, "userId" : {$ne: userID}, "is_read": true}, {$set : {"is_read": true}})
-  return messages
+  await Message.updateMany({"roomId": roomId, "userId" : {$ne: userID}, "is_read": false}, {$set : {"is_read": true}})
+  return true
  }
 
 
@@ -685,27 +685,37 @@ async function updateUserAdresses(userId, adresses){
  }
 
  /////// notification handler.
- async function sendNotification(registrationToken, title, body) {
+ async function sendNotification(registrationToken, title, body, topic) {
   const message = {
+    data : {
+      type: topic
+    },
     notification: {
       title: title,
-      body: body,
+      body: body
     },
     apns: {
       payload : {
         aps : {
-          sound:"default"
+          sound: "default",
+          contentAvailable: true,
         }
+      },
+      headers : {
+        //"apns-push-type": "background",
+        "apns-priority": "5",
+        "apns-topic": "io.flutter.plugins.firebase.messaging"
       }
   } ,
     android: {
+      priority: "high",
       notification: {
         sound: "default"
       }
     }, 
     token: registrationToken
   };
-   const notif = await admin.messaging().send(message)
+   const notif = await admin.messaging().send(message).catch((err) => {console.log(err)})
    return notif
  }
 
@@ -731,5 +741,5 @@ async function updateUserAdresses(userId, adresses){
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
-          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction}
+          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser}
 
