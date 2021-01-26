@@ -730,7 +730,7 @@ async function updateUserAdresses(userId, adresses){
         type: "new_message",
         senderImgUrl : senderPhotoUrl,
         senderName: senderName,
-        roomId: roomId
+        roomId: messageInput.roomId
       },
       notification: {
         title: senderName,
