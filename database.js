@@ -409,6 +409,8 @@ async function getUserById(userId) {
 
 
 
+
+
 function UsersDataloader() {
   return new DataLoader(findUsersbyIds)
 }
@@ -626,8 +628,9 @@ async function updateUserAdresses(userId, adresses){
  async function createMessage(messageInput) {
    const Message = mongoose.model("Message", MessageSchema)
    const message = new Message(messageInput)
-   const saved = await message.save().catch(err => {console.log(err)})
-   sendNotification(messageInput.receiver_push_token, "Nouveau message", "Vous avez recu un nouveau message", "new_message")
+   const saved = await message.save().catch(err => {console.log(err)}) 
+   const sender = await getUserById(messageInput.userId);
+   sendNotificationforMEssage(messageInput.receiver_push_token, messageInput, sender.photoUrl, sender.first_name + " " +  sender.last_name)
    return  saved
  }
 
@@ -718,6 +721,45 @@ async function updateUserAdresses(userId, adresses){
    const notif = await admin.messaging().send(message).catch((err) => {console.log(err)})
    return notif
  }
+
+
+  /////// notification handler.
+  async function sendNotificationforMEssage(registrationToken, messageInput, senderPhotoUrl, senderName) {
+    const message = {
+      data : {
+        type: "new_message",
+        senderImgUrl : senderPhotoUrl,
+        senderName: senderName,
+        roomId: roomId
+      },
+      notification: {
+        title: senderName,
+        body: messageInput.message
+      },
+      apns: {
+        payload : {
+          aps : {
+            sound: "default",
+            contentAvailable: true,
+          }
+        },
+        headers : {
+          //"apns-push-type": "background",
+          "apns-priority": "5",
+          "apns-topic": "io.flutter.plugins.firebase.messaging"
+        }
+    } ,
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default"
+        }
+      }, 
+      token: registrationToken
+    };
+     const notif = await admin.messaging().send(message).catch((err) => {console.log(err)})
+     return notif
+   }
 
 
 
