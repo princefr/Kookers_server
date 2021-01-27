@@ -91,6 +91,13 @@ const typeDefs = gql`
     currency: String
   }
 
+  input BirthDate {
+    day: Int!
+    month: Int!
+    year: Int!
+    iso: String!
+  }
+
 
   input UserInput {
     id: ID
@@ -109,6 +116,7 @@ const typeDefs = gql`
     updatedAt : String
     country: String!
     currency: String!
+    birth_date: BirthDate!
   }
 
 
@@ -132,6 +140,7 @@ const typeDefs = gql`
     country: String
     currency: String
     default_source: String
+    default_iban: String
     stripe_account: String
   }
 
@@ -476,6 +485,7 @@ const typeDefs = gql`
     refuseOrder(order: OrderInput): Order!
     acceptOrder(order: OrderInput): Order!
     updateDefaultSource(userId: String!, source: String!): String!
+    updateIbanSource(userId: String!, iban: String!): String!
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: String!, currency: String!): Payout
 

@@ -56,6 +56,13 @@ var Adress = new Schema({
 }, { _id : false })
 
 
+var BirthDate = new Schema({
+  day: Number,
+  month: Number,
+  year: Number,
+  iso: String,
+}, { _id : false })
+
 
 var Rating = new Schema({
   rating_total:{type: Number, default: 0.0} ,
@@ -95,7 +102,8 @@ var Rating = new Schema({
    country: {type: String, required: true},
    currency: {type: String, required: true},
    user_baned: {type: Boolean, default: false},
-   birth_date: {type: String},
+   birth_date: {type: BirthDate, required: true},
+   default_iban: {type: String},
    birth_place: String,
    is_recto_id: Boolean,
    is_verso_id: Boolean,
@@ -266,7 +274,13 @@ async function createStripeCustomer(email) {
     email: user.email,
     first_name: user.first_name,
     last_name: user.last_name,
-    phone: user.phonenumber
+    phone: user.phonenumber,
+    
+    dob: {
+      day: user.birth_date.day,
+      month : user.birth_date.month,
+      year: user.birth_date.year
+    }
   }
 })
   .catch(err => {console.log(err)})
@@ -435,7 +449,13 @@ async function updateDefaultSource(userId, source) {
   await User.findOneAndUpdate({"_id": userId}, {"default_source": source})
   const updated  = await User.findById(userId)
   return updated.default_source
+}
 
+async function updateIbanSource(userId, source){
+  const User = mongoose.model('User', UserSchema)
+  await User.findOneAndUpdate({"_id": userId}, {"default_iban": source})
+  const updated  = await User.findById(userId)
+  return updated.default_iban
 }
 
 
@@ -783,5 +803,5 @@ async function updateUserAdresses(userId, adresses){
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
-          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser}
+          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser, updateIbanSource}
 
