@@ -146,6 +146,8 @@ var Rating = new Schema({
    buyerID: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
    orderState: {type: String, required: true},
    refoundId: String,
+   notificationBuyer: {type: Number, default: 0},
+   notificationSeller : {type: Number, default: 0},
    sellerId: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
    seller_stripe_account:{type: String, required: true},
    payment_method_id: {type: String, required: true},
@@ -459,6 +461,14 @@ async function updateIbanSource(userId, source){
 }
 
 
+async function updateFirebasetoken(userId, token){
+  const User = mongoose.model('User', UserSchema)
+  await User.findOneAndUpdate({"_id": userId}, {"fcmToken": token})
+  const updated  = await User.findById(userId)
+  return updated.fcmToken
+}
+
+
 async function updateUserImage(userId, imageUrl){
   const User = mongoose.model('User', UserSchema)
   await User.findOneAndUpdate({"firebaseUID": userId}, {"photoUrl": imageUrl})
@@ -543,13 +553,14 @@ async function updateUserAdresses(userId, adresses){
    
    order_input.stripeTransactionId = paymentIntent.id
    order_input.fees = parseInt(percentage(30, order_input.total_price))
+   //order_input.notificationSeller = +1
    const order = new Order(order_input)
    await order.save().catch(err => {console.log(err)})
    sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande", "new_order")
    return true
  }
 
-
+ // inncrement and send nnotification to 
  async function cancelOrderStripe(order_input) {
    const cancel_reason = ["duplicate", "fraudulent", "requested_by_customer",  "abandoned"]
    const refound = await cancelPaymentIntent(order_input.stripeTransactionId, cancel_reason[2]).catch(err => {throw err})
@@ -803,5 +814,5 @@ async function updateUserAdresses(userId, adresses){
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
-          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser, updateIbanSource}
+          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken}
 

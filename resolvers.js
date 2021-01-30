@@ -9,7 +9,7 @@ const {createNewPublication, createNewUser, checkUserExist,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
         refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
-         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource} = require("./database");
+         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken} = require("./database");
 
 const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -295,6 +295,13 @@ const resolvers = {
     updateIbanSource: async(_, {userId, iban}) => {
       return updateIbanSource(userId, iban)
     },
+
+    updateFirebasetoken: async(_, {userId, token}) => {
+      return updateFirebasetoken(userId, token)
+    },
+
+
+    
     
 
 

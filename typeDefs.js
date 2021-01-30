@@ -214,6 +214,8 @@ const typeDefs = gql`
     publication: Publication
     seller: User
     buyer: User
+    notificationBuyer: Int
+    notificationSeller : Int
     currency: String
   }
 
@@ -486,6 +488,9 @@ const typeDefs = gql`
     acceptOrder(order: OrderInput): Order!
     updateDefaultSource(userId: String!, source: String!): String!
     updateIbanSource(userId: String!, iban: String!): String!
+    updateFirebasetoken(userId: String!, token: String!): String!
+
+
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: String!, currency: String!): Payout
 
