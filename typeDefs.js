@@ -479,6 +479,9 @@ const typeDefs = gql`
     sendMessage(message: MessageInput): Boolean!
     updateAllMessageForUser(userID:String, roomId: String): Boolean!
 
+    cleanNotificationSeller(orderId: String): Order!
+    cleanNotificationBuyer(orderId: String): Order!
+
     addattachPaymentToCustomer(customer_id: String!, methode_id: String!): PaymentMethod
     updateUserImage(userID: String!, imageUrl: String!): User!
     updateSettings(userID: String!, settings: UserSettingsInput!): User!

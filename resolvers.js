@@ -9,7 +9,7 @@ const {createNewPublication, createNewUser, checkUserExist,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
         refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
-         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken} = require("./database");
+         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer} = require("./database");
 
 const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -317,6 +317,16 @@ const resolvers = {
     updateAllMessageForUser: async(_, {userID, roomId}) => {
       pubsub.publish('MESSAGE_READ', { roomId: roomId, userID: userID});
       return updateAllMessageForUser(userID, roomId)
+    },
+
+
+    cleanNotificationSeller: async(_, {orderId}) => {
+      return cleanNotificationSeller(orderId)
+    },
+
+
+    cleanNotificationBuyer: async(_, {orderId}) => {
+      return cleanNotificationBuyer(orderId)
     },
 
 

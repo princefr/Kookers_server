@@ -550,7 +550,6 @@ async function updateUserAdresses(userId, adresses){
    const seller = await getUserById(order_input.sellerId)
    const Order = mongoose.model("Order", OrderSchema)
    const paymentIntent = await createPaymentIntent(order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId).catch((err) => {throw err})
-   
    order_input.stripeTransactionId = paymentIntent.id
    order_input.fees = parseInt(percentage(30, order_input.total_price))
    //order_input.notificationSeller = +1
@@ -560,27 +559,28 @@ async function updateUserAdresses(userId, adresses){
    return true
  }
 
- // inncrement and send nnotification to 
+ // increment and send nnotification to 
+ // this two method belong to buyer
  async function cancelOrderStripe(order_input) {
    const cancel_reason = ["duplicate", "fraudulent", "requested_by_customer",  "abandoned"]
    const refound = await cancelPaymentIntent(order_input.stripeTransactionId, cancel_reason[2]).catch(err => {throw err})
    order_input.refoundId = refound.id
    order_input.orderState = "CANCELLED"
    order_input.updatedAt = new Date().toISOString()
-   const updated = await UpdateOrder(order_input, true)
+   const updated = await UpdateOrderBuyer(order_input, true)
   return updated
  }
 
-
+  // TODO add notification to this
  async function validateOrder(order_input){
   await confirmPaymentIntent(order_input.stripeTransactionId).catch(err => {throw err})
   order_input.orderState = "DONE"
   order_input.updatedAt = new Date().toISOString()
-  const updated = await UpdateOrder(order_input, false)
+  const updated = await UpdateOrderBuyer(order_input, false)
   return updated
  }
 
-
+// this two method belongs to seller.
  async function refuseOrder(order_input) {
   const cancel_reason = ["duplicate", "fraudulent", "requested_by_customer",  "abandoned"]
   const refound = await cancelPaymentIntent(order_input.stripeTransactionId, cancel_reason[2]).catch(err => {throw err})
@@ -599,14 +599,31 @@ async function updateUserAdresses(userId, adresses){
  }
 
 
+ async function cleanNotificationSeller(orderId) {
+  const Order = mongoose.model("Order", OrderSchema)
+  await Order.findOneAndUpdate({"_id": orderId}, {"notificationSeller": 0, updatedAt: new Date().toISOString()})
+  const updated = await Order.findById(orderId)
+  return updated
+
+ }
+
+
+
+
+ async function cleanNotificationBuyer(orderId) {
+  const Order = mongoose.model("Order", OrderSchema)
+  await Order.findOneAndUpdate({"_id": orderId}, {"notificationBuyer": 0, updatedAt: new Date().toISOString()})
+  const updated = await Order.findById(orderId)
+  return updated
+ }
+
+
  async function ChangeOrderState(orderId, status){
   const Order = mongoose.model("Order", OrderSchema)
   await Order.findOneAndUpdate({"_id": orderId}, {"orderState": status, updatedAt: new Date().toISOString()})
   const updated = await Order.findById(orderId)
   return updated
  }
-
-
 
 
  async function getOrderOwnedByUserBuyer(userId) {
@@ -625,14 +642,26 @@ async function updateUserAdresses(userId, adresses){
  async function UpdateOrder(order, with_refound) {
    const Order = mongoose.model("Order", OrderSchema)
    if(with_refound == false){
-    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt})
+    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationBuyer": 1}})
    }else{
-    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId})
+    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationBuyer": 1}})
    }
    
    const updated = await Order.findById(order.id)
    return updated
  }
+
+ async function UpdateOrderBuyer(order, with_refound) {
+  const Order = mongoose.model("Order", OrderSchema)
+  if(with_refound == false){
+   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationSeller": 1}})
+  }else{
+   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationSeller": 1}})
+  }
+  
+  const updated = await Order.findById(order.id)
+  return updated
+}
 
 
 
@@ -814,5 +843,6 @@ async function updateUserAdresses(userId, adresses){
        getPublicationByid, UsersDataloader, MessagesDataloader,
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
-          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken}
+          updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction,
+           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer}
 
