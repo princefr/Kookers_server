@@ -32,6 +32,27 @@ const geocoder = NodeGeocoder(options);
  mongoose.connect('mongodb+srv://princeondonda:4qF0PF11794591@cluster0.myzbc.mongodb.net/<dbname>?retryWrites=true&w=majority', {useNewUrlParser: true});
  const Schema = mongoose.Schema;
 
+
+ var Fees = new Schema({
+  buyerFees: Number,
+  sellerFees: Number,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+}, { _id : false })
+
+ var BuyerFees = new Schema({
+  id: Number,
+  title: String,
+  is_selected: Boolean
+}, { _id : false })
+
+
+var SellerFees = new Schema({
+  id: Number,
+  title: String,
+  is_selected: Boolean
+}, { _id : false })
+
  var FoodPreferenceSchema = new Schema({
   id: Number,
   title: String,
@@ -422,11 +443,6 @@ async function getUserById(userId) {
   return User.findOne({"_id": userId}).catch(err => {throw err})
 }
 
-
-
-
-
-
 function UsersDataloader() {
   return new DataLoader(findUsersbyIds)
 }
@@ -437,6 +453,13 @@ async function findUsersbyIds(ids) {
   const groupedById = groupBy(user => user._id, users)
   const mapped = map(user => groupedById[user._id], ids)
   return mapped.flat()
+}
+
+// TODO implemente fee mechanism
+async function loadFees(){
+  const Fee = mongoose.model('Fee', Fees);
+  const fee = await Fee.findOne({"_id": "601aa4691f7498627b580357"})
+  return fee
 }
 
 
