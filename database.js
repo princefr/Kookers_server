@@ -201,7 +201,7 @@ var Rating = new Schema({
  ///// Payment logic with stripe
  
 async function createStripeCustomer(email) {
-  const result = await stripe.customers.create({email: email}).catch(err => {console.log(err)})
+  const result = await stripe.customers.create({email: email}).catch(err => {throw err})
   return result.id
 }
 
@@ -239,7 +239,7 @@ async function createStripeCustomer(email) {
  async function confirmPaymentIntent(paymentIntentId) {
   const paymentIntent = await stripe.paymentIntents.confirm(
     paymentIntentId
-  );
+  ).catch(err => {throw err});
 
   return paymentIntent;
  }
@@ -248,7 +248,7 @@ async function createStripeCustomer(email) {
  async function cancelPaymentIntent(paymentIntentId, cancellation_reason){
   const paymentIntent = await stripe.paymentIntents.cancel(
     paymentIntentId, {cancellation_reason: cancellation_reason}
-  );
+  ).catch(err => {throw err});
 
   return paymentIntent;
  }
@@ -285,25 +285,25 @@ async function createStripeCustomer(email) {
     }
   }
 })
-  .catch(err => {console.log(err)})
+  .catch(err => {throw err})
   return account
  }
 
 
  async function retrieveAccount(acount_id){
-  const account = await stripe.accounts.retrieve(acount_id).catch(err => {console.log(err)});
+  const account = await stripe.accounts.retrieve(acount_id).catch(err => {throw err});
   return account
  }
 
 
  async function getConnecedAccountBalance(acount_id){
-   const account  = await stripe.balance.retrieve({stripeAccount: acount_id}).catch(err => {console.log(err)})
+   const account  = await stripe.balance.retrieve({stripeAccount: acount_id}).catch(err => {throw err})
    return {current_balance: account.available[0].amount, pending_balance: account.pending[0].amount, currency: account.available[0].currency}
  }
 
 
  async function getBalanceTransaction(accountId){
-   const transactions =  await stripe.balanceTransactions.list({stripeAccount: accountId}).catch(err => {console.log(err)})
+   const transactions =  await stripe.balanceTransactions.list({stripeAccount: accountId}).catch(err => {throw err})
    return transactions.data
  }
 
@@ -314,7 +314,7 @@ async function createStripeCustomer(email) {
     currency:  currency,
     account_number: account_number
   }}
-  ).catch(err => {console.log(err)});
+  ).catch(err => {throw err});
 
   return bankAccount
  }
@@ -322,7 +322,7 @@ async function createStripeCustomer(email) {
  async function listExternalAccount(account_id) {
   const accountBankAccounts = await stripe.accounts.listExternalAccounts(
     account_id
-  );
+  ).catch(err => {throw err});
   return accountBankAccounts.data
  }
 
@@ -333,14 +333,14 @@ async function createStripeCustomer(email) {
     currency: currency,
   }, {
     stripeAccount: account_id,
-  })
+  }).catch(err => {throw err})
 
   return payout
  }
 
 
  async function PayoutList(account_id) {
-  const payouts = await stripe.payouts.list({stripeAccount: account_id,});
+  const payouts = await stripe.payouts.list({stripeAccount: account_id,}).catch(err => {throw err});
   return payouts.data
  }
 
@@ -348,7 +348,7 @@ async function createStripeCustomer(email) {
 
 
  async function loadCartList(customer) {
-  const cards = await stripe.paymentMethods.list({customer: customer, type: "card"});
+  const cards = await stripe.paymentMethods.list({customer: customer, type: "card"}).catch(err => {throw err});
   return cards.data.map((element) => {
     return {"id": element.id,  "brand": element.card.brand,
     "country": element.card.country, "exp_month": element.card.exp_month,
@@ -363,7 +363,7 @@ async function createStripeCustomer(email) {
   const paymentMethod = await stripe.paymentMethods.attach(
     methode_id,
     {customer: customer_id}
-  );
+  ).catch(err => {throw err});
 
   return paymentMethod
  }
@@ -374,7 +374,7 @@ async function createStripeCustomer(email) {
 ////// firebase file storage.
 async function uploadOneFile(file_data){
   const bucket  = admin.storage.bucket()
-  const fileUploaded = await bucket.uploadOneFile(file_data).catch(err => {console.log("error")})
+  const fileUploaded = await bucket.uploadOneFile(file_data).catch(err => {throw err})
   return fileUploaded
 }
 
@@ -382,18 +382,18 @@ async function uploadOneFile(file_data){
 ////// Business logic functions of the database
 
 
- async function ValidateAuthData(authData) {
-   const decodedToken = await admin.auth().verifyIdToken(authData.access_token).catch(err => {throw err})
-   if (decodedToken && decodedToken.uid == authData.id) {
-      return;
-    }else{
-      throw new Error('Firebase auth not found for this user.')
-    }
- }
-
- async function connectToFirebase(authData){
-  const valided = await ValidateAuthData(authData)
-  return valided
+ async function ValidateAuthData(ctx) {
+  const Authorization = (ctx.req || ctx.request).get('Authorization')
+  if(Authorization){
+    const token = Authorization.replace('Bearer ', '')
+    const decodedToken = await admin.auth().verifyIdToken(token).catch(err => {throw err})
+    if (decodedToken && decodedToken.uid == authData.id) {
+       return;
+     }else{
+       throw new Error('Firebase auth not found for this user.')
+     }
+  }
+  throw new Error('Firebase auth not found for this user.')
  }
 
 
@@ -408,18 +408,18 @@ async function uploadOneFile(file_data){
    user_input.stripe_account = stripeAccount.id
 
    const user = new User(user_input)
-   const saved = await user.save().catch(err => {console.log(err)})
+   const saved = await user.save().catch(err => {throw err})
    return saved
 }
 
 async function checkUserExist(firebase_uid){
   const User = mongoose.model('User', UserSchema);
-  return User.findOne({"firebaseUID": firebase_uid})
+  return User.findOne({"firebaseUID": firebase_uid}).catch(err => {throw err})
 }
 
 async function getUserById(userId) {
   const User = mongoose.model('User', UserSchema);
-  return User.findOne({"_id": userId})
+  return User.findOne({"_id": userId}).catch(err => {throw err})
 }
 
 
@@ -433,7 +433,7 @@ function UsersDataloader() {
 
 async function findUsersbyIds(ids) {
   const User = mongoose.model('User', UserSchema);
-  const users = await User.find({"_id": {$in: ids}}).exec()
+  const users = await User.find({"_id": {$in: ids}}).catch(err => {throw err})
   const groupedById = groupBy(user => user._id, users)
   const mapped = map(user => groupedById[user._id], ids)
   return mapped.flat()
@@ -442,50 +442,50 @@ async function findUsersbyIds(ids) {
 
 async function updateUser(userId, user) {
   const User = mongoose.model('User', UserSchema)
-  return User.findOneAndUpdate({id: userId}, {user})
+  return User.findOneAndUpdate({id: userId}, {user}).catch(err => {throw err})
 }
 
 
 async function updateDefaultSource(userId, source) {
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"_id": userId}, {"default_source": source})
-  const updated  = await User.findById(userId)
+  await User.findOneAndUpdate({"_id": userId}, {"default_source": source}).catch(err => {throw err})
+  const updated  = await User.findById(userId).catch(err => {throw err})
   return updated.default_source
 }
 
 async function updateIbanSource(userId, source){
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"_id": userId}, {"default_iban": source})
-  const updated  = await User.findById(userId)
+  await User.findOneAndUpdate({"_id": userId}, {"default_iban": source}).catch(err => {throw err})
+  const updated  = await User.findById(userId).catch(err => {throw err})
   return updated.default_iban
 }
 
 
 async function updateFirebasetoken(userId, token){
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"_id": userId}, {"fcmToken": token})
-  const updated  = await User.findById(userId)
+  await User.findOneAndUpdate({"_id": userId}, {"fcmToken": token}).catch(err => {throw err})
+  const updated  = await User.findById(userId).catch(err => {throw err})
   return updated.fcmToken
 }
 
 
 async function updateUserImage(userId, imageUrl){
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"firebaseUID": userId}, {"photoUrl": imageUrl})
-  return User.findOne({"firebaseUID": userId})
+  await User.findOneAndUpdate({"firebaseUID": userId}, {"photoUrl": imageUrl}).catch(err => {throw err})
+  return User.findOne({"firebaseUID": userId}).catch(err => {throw err})
 }
 
 
 async function updateSettings(userId, settings){
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"firebaseUID": userId}, {"settings": settings})
-  return User.findOne({"firebaseUID": userId})
+  await User.findOneAndUpdate({"firebaseUID": userId}, {"settings": settings}).catch(err => {throw err})
+  return User.findOne({"firebaseUID": userId}).catch(err => {throw err})
 }
 
 async function updateUserAdresses(userId, adresses){
   const User = mongoose.model('User', UserSchema)
-  await User.findOneAndUpdate({"firebaseUID": userId}, {"adresses": adresses})
-  return User.findOne({"firebaseUID": userId})
+  await User.findOneAndUpdate({"firebaseUID": userId}, {"adresses": adresses}).catch(err => {throw err})
+  return User.findOne({"firebaseUID": userId}).catch(err => {throw err})
 }
 
 ///// publication handling
@@ -493,7 +493,7 @@ async function updateUserAdresses(userId, adresses){
  async function createNewPublication(publication_input) {
    const Publication = mongoose.model("Publication", PublicationSchema)
    const publication = new Publication(publication_input)
-   await publication.save().catch(err => {console.log(err)})
+   await publication.save().catch(err => {throw err})
    return publication
  }
 
@@ -511,7 +511,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function findPublicationByIds(ids){
   const Publication = mongoose.model("Publication", PublicationSchema)
-  const publications = await Publication.find({"_id": {$in: ids}}).exec()
+  const publications = await Publication.find({"_id": {$in: ids}}).catch(err => {throw err})
   const groupedById = groupBy(pub => pub._id, publications)
   const mapped = map(pub => groupedById[pub._id], ids)
   return mapped.flat()
@@ -522,12 +522,12 @@ async function updateUserAdresses(userId, adresses){
 
  async function getPublicationViaGeohash(lowervalue, greathervalue, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
-  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}}).exec()
+  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}}).catch(err => {throw err})
  }
 
  async function getPublicationsOwnedByUser(userId){
   const Publication = mongoose.model("Publication", PublicationSchema)
-  const pub = Publication.find().where("sellerId").equals(userId).exec()
+  const pub = Publication.find().where("sellerId").equals(userId).catch(err => {throw err})
   return pub
  }
 
@@ -536,7 +536,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function getPublicationAndUpdateIsOpen(pubId, is_open){
   const Publication = mongoose.model("Publication", PublicationSchema)
-  const publication =  await Publication.findOneAndUpdate({_id: pubId}, {is_open: is_open, updateAt: Date.now() }).catch(error => {console.log(error)})
+  const publication =  await Publication.findOneAndUpdate({_id: pubId}, {is_open: is_open, updateAt: Date.now() }).catch(err => {throw err})
   return publication
  }
 
@@ -554,7 +554,7 @@ async function updateUserAdresses(userId, adresses){
    order_input.fees = parseInt(percentage(30, order_input.total_price))
    //order_input.notificationSeller = +1
    const order = new Order(order_input)
-   await order.save().catch(err => {console.log(err)})
+   await order.save().catch(err => {throw err})
    sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande", "new_order")
    return true
  }
@@ -601,8 +601,8 @@ async function updateUserAdresses(userId, adresses){
 
  async function cleanNotificationSeller(orderId) {
   const Order = mongoose.model("Order", OrderSchema)
-  await Order.findOneAndUpdate({"_id": orderId}, {"notificationSeller": 0, updatedAt: new Date().toISOString()})
-  const updated = await Order.findById(orderId)
+  await Order.findOneAndUpdate({"_id": orderId}, {"notificationSeller": 0, updatedAt: new Date().toISOString()}).catch(err => {throw err})
+  const updated = await Order.findById(orderId).catch(err => {throw err})
   return updated
 
  }
@@ -612,28 +612,28 @@ async function updateUserAdresses(userId, adresses){
 
  async function cleanNotificationBuyer(orderId) {
   const Order = mongoose.model("Order", OrderSchema)
-  await Order.findOneAndUpdate({"_id": orderId}, {"notificationBuyer": 0, updatedAt: new Date().toISOString()})
-  const updated = await Order.findById(orderId)
+  await Order.findOneAndUpdate({"_id": orderId}, {"notificationBuyer": 0, updatedAt: new Date().toISOString()}).catch(err => {throw err})
+  const updated = await Order.findById(orderId).catch(err => {throw err})
   return updated
  }
 
 
  async function ChangeOrderState(orderId, status){
   const Order = mongoose.model("Order", OrderSchema)
-  await Order.findOneAndUpdate({"_id": orderId}, {"orderState": status, updatedAt: new Date().toISOString()})
-  const updated = await Order.findById(orderId)
+  await Order.findOneAndUpdate({"_id": orderId}, {"orderState": status, updatedAt: new Date().toISOString()}).catch(err => {throw err})
+  const updated = await Order.findById(orderId).catch(err => {throw err})
   return updated
  }
 
 
  async function getOrderOwnedByUserBuyer(userId) {
   const Order = mongoose.model("Order", OrderSchema)
-  return Order.find().where("buyerID").equals(userId).exec()
+  return Order.find().where("buyerID").equals(userId).catch(err => {throw err})
  }
  
  async function getOrderOwnedByUserSeller(userId) {
   const Order = mongoose.model("Order", OrderSchema)
-  return Order.find().where("sellerId").equals(userId).exec()
+  return Order.find().where("sellerId").equals(userId).catch(err => {throw err})
  }
 
 
@@ -642,24 +642,24 @@ async function updateUserAdresses(userId, adresses){
  async function UpdateOrder(order, with_refound) {
    const Order = mongoose.model("Order", OrderSchema)
    if(with_refound == false){
-    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationBuyer": 1}})
+    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationBuyer": 1}}).catch(err => {throw err})
    }else{
-    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationBuyer": 1}})
+    await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationBuyer": 1}}).catch(err => {throw err})
    }
    
-   const updated = await Order.findById(order.id)
+   const updated = await Order.findById(order.id).catch(err => {throw err})
    return updated
  }
 
  async function UpdateOrderBuyer(order, with_refound) {
   const Order = mongoose.model("Order", OrderSchema)
   if(with_refound == false){
-   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationSeller": 1}})
+   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, $inc: {"notificationSeller": 1}}).catch(err => {throw err})
   }else{
-   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationSeller": 1}})
+   await Order.findOneAndUpdate({"_id": order.id}, {"orderState": order.orderState, "updatedAt": order.updatedAt, "refoundId": order.refoundId, $inc: {"notificationSeller": 1}}).catch(err => {throw err})
   }
   
-  const updated = await Order.findById(order.id)
+  const updated = await Order.findById(order.id).catch(err => {throw err})
   return updated
 }
 
@@ -670,25 +670,25 @@ async function updateUserAdresses(userId, adresses){
 
  async function CreateRoom(user1, user2) {
   const Room = mongoose.model("Room", RoomSchema)
-  const roomExist = await Room.exists({users: {$all : [user1, user2]}})
+  const roomExist = await Room.exists({users: {$all : [user1, user2]}}).catch(err => {throw err})
   if (roomExist) {
-    return Room.findOne({users: {$all : [user1, user2]}})
+    return Room.findOne({users: {$all : [user1, user2]}}).catch(err => {throw err})
   }else{
-    const room = await new Room({users: [user1, user2]}).save()
+    const room = await new Room({users: [user1, user2]}).save().catch(err => {throw err})
     return room
   }
  }
 
  async function findAllUserRoom(userId){
   const Room = mongoose.model("Room", RoomSchema)
-  return Room.find({users: {$in : [userId]}})
+  return Room.find({users: {$in : [userId]}}).catch(err => {throw err})
  }
 
 
  async function createMessage(messageInput) {
    const Message = mongoose.model("Message", MessageSchema)
    const message = new Message(messageInput)
-   const saved = await message.save().catch(err => {console.log(err)}) 
+   const saved = await message.save().catch(err => {throw err})
    const sender = await getUserById(messageInput.userId);
    sendNotificationforMEssage(messageInput.receiver_push_token, messageInput, sender.photoUrl, sender.first_name + " " +  sender.last_name)
    return  saved
@@ -697,14 +697,14 @@ async function updateUserAdresses(userId, adresses){
 
  async function loadAllMessageForRoom(roomId){
   const Message = mongoose.model("Message", MessageSchema)
-  const messages = await Message.find({"roomId": roomId})
+  const messages = await Message.find({"roomId": roomId}).catch(err => {throw err})
   return messages
  }
 
 
  async function updateAllMessageForUser(userID, roomId) {
   const Message = mongoose.model("Message", MessageSchema)
-  await Message.updateMany({"roomId": roomId, "userId" : {$ne: userID}, "is_read": false}, {$set : {"is_read": true}})
+  await Message.updateMany({"roomId": roomId, "userId" : {$ne: userID}, "is_read": false}, {$set : {"is_read": true}}).catch(err => {throw err})
   return true
  }
 
@@ -715,7 +715,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function LoadallMessageForRoombyIds(ids) {
   const Message = mongoose.model("Message", MessageSchema)
-  const messages = await Message.find({"roomId": {$in: ids}}).exec()
+  const messages = await Message.find({"roomId": {$in: ids}}).catch(err => {throw err})
   const groupedById = groupBy(user => user.roomId, messages)
   const mapped = map(roomid=> groupedById[roomid], ids)
   return mapped
@@ -729,7 +729,7 @@ async function updateUserAdresses(userId, adresses){
  async function createReport(report_input){
   const Report = mongoose.model("Report", ReportSchema)
   const report = new Report(report_input)
-   await report.save().catch(err => {console.log(err)})
+   await report.save().catch(err => {throw err})
    return report
  }
 
@@ -738,12 +738,12 @@ async function updateUserAdresses(userId, adresses){
  async function RateOrder(rating_input) {
    const Rate = mongoose.model("Rating", RatingSchema)
    const rate = new Rate(rating_input)
-   await rate.save().catch(err => {console.log(err)})
+   await rate.save().catch(err => {throw err})
    await ChangeOrderState(rating_input.orderId, "RATED")
    const publication = await getPublicationByid(rating_input.publicationId)
    publication.rating.rating_total = parseFloat(publication.rating.rating_total) + parseFloat(rating_input.rate)
    publication.rating.rating_count = parseInt(publication.rating.rating_count) + 1
-   await  publication.save().catch(err => {console.log(err)})
+   await  publication.save().catch(err => {throw err})
    return rate
  }
 
@@ -844,5 +844,5 @@ async function updateUserAdresses(userId, adresses){
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
           updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction,
-           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer}
+           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData}
 

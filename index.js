@@ -5,6 +5,7 @@ const {DateResolver, EmailAddressResolver, PhoneNumberResolver} = require("graph
 const {resolvers}  = require("./resolvers")
 const {typeDefs} = require("./typeDefs")
 var path = require('path')
+const {ValidateAuthData} = require("./database")
 
 
 
@@ -23,6 +24,11 @@ const PORT = process.env.PORT || 4000;
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  // context: async req => {
+  //   const user = await ValidateAuthData(req)
+  //   return user
+  // },
+
   subscriptions: {
     keepAlive: 30000,
     onConnect: (connectionParams, webSocket) => {}},

@@ -324,27 +324,11 @@ const resolvers = {
       return cleanNotificationSeller(orderId)
     },
 
+    
 
     cleanNotificationBuyer: async(_, {orderId}) => {
       return cleanNotificationBuyer(orderId)
     },
-
-
-
-    
-
-
-    
-
-
-
-    
-
-
-
-
-    
-
 
 
   }
