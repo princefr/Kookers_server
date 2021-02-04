@@ -237,7 +237,7 @@ async function createStripeCustomer(email) {
     amount: total,
     currency: currency,
     customer : customer,
-    description: "Kookers commande- ",
+    description: "Kookers commande - ",
     payment_method: paymentmethod,
     confirm: false,
     receipt_email: "pondonda@gmail.com",
@@ -456,7 +456,7 @@ async function findUsersbyIds(ids) {
 }
 
 // TODO implemente fee mechanism
-async function loadFees(){
+async function loadFees() {
   const Fee = mongoose.model('Fee', Fees);
   const fee = await Fee.findOne({"_id": "601aa4691f7498627b580357"})
   return fee
@@ -568,17 +568,17 @@ async function updateUserAdresses(userId, adresses){
 
 
  /////// order handling
-
  async function createNewOrder(order_input) {
    const seller = await getUserById(order_input.sellerId)
    const Order = mongoose.model("Order", OrderSchema)
    const paymentIntent = await createPaymentIntent(order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId).catch((err) => {throw err})
    order_input.stripeTransactionId = paymentIntent.id
    order_input.fees = parseInt(percentage(30, order_input.total_price))
-   //order_input.notificationSeller = +1
+   order_input.notificationSeller = 1
    const order = new Order(order_input)
    await order.save().catch(err => {throw err})
-   sendNotification(seller.fcmToken, "Commande", "Vous avez une nouvelle commande", "new_order")
+   const userToSend = await getUserById(order_input.sellerId)
+   sendNotificationForOrder("new_order", "Nouvelle commande", "Vous avez une nouvelle commande.", order_input._id, "order_seller", userToSend.fcmToken)
    return true
  }
 
@@ -591,15 +591,19 @@ async function updateUserAdresses(userId, adresses){
    order_input.orderState = "CANCELLED"
    order_input.updatedAt = new Date().toISOString()
    const updated = await UpdateOrderBuyer(order_input, true)
+   const userToSend = await getUserById(order_input.sellerId)
+   sendNotificationForOrder("order_cancelled", "Annulation", "Une commande vient d'etre annulé par le client.", order_input._id, "order_seller", userToSend.fcmToken)
   return updated
  }
 
-  // TODO add notification to this
+
  async function validateOrder(order_input){
   await confirmPaymentIntent(order_input.stripeTransactionId).catch(err => {throw err})
   order_input.orderState = "DONE"
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrderBuyer(order_input, false)
+  const userToSend = await getUserById(order_input.sellerId)
+  sendNotificationForOrder("order_done", "Commande terminé", "Une commande vient de se terminer.", order_input._id, "order_seller", userToSend.fcmToken)
   return updated
  }
 
@@ -611,6 +615,8 @@ async function updateUserAdresses(userId, adresses){
   order_input.orderState = "REFUSED"
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrder(order_input, true)
+  const userToSend = await getUserById(order_input.buyerID)
+  sendNotificationForOrder("order_refused", "Refus commande", "Votre commande n'a malheureusement pas été accepté.", order_input._id, "order_buyer", userToSend.fcmToken)
   return updated
  }
 
@@ -618,6 +624,8 @@ async function updateUserAdresses(userId, adresses){
   order_input.orderState = "ACCEPTED"
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrder(order_input, false)
+  const userToSend = await getUserById(order_input.buyerID)
+  sendNotificationForOrder("order_accepted", "Acceptation commande", "Votre commande vient d'etre accepté.", order_input._id, "order_buyer", userToSend.fcmToken)
   return updated
  }
 
@@ -627,10 +635,7 @@ async function updateUserAdresses(userId, adresses){
   await Order.findOneAndUpdate({"_id": orderId}, {"notificationSeller": 0, updatedAt: new Date().toISOString()}).catch(err => {throw err})
   const updated = await Order.findById(orderId).catch(err => {throw err})
   return updated
-
  }
-
-
 
 
  async function cleanNotificationBuyer(orderId) {
@@ -775,6 +780,44 @@ async function updateUserAdresses(userId, adresses){
   const message = {
     data : {
       type: topic
+    },
+    notification: {
+      title: title,
+      body: body
+    },
+    apns: {
+      payload : {
+        aps : {
+          sound: "default",
+          contentAvailable: true,
+        }
+      },
+      headers : {
+        //"apns-push-type": "background",
+        "apns-priority": "5",
+        "apns-topic": "io.flutter.plugins.firebase.messaging"
+      }
+  } ,
+    android: {
+      priority: "high",
+      notification: {
+        sound: "default"
+      }
+    }, 
+    token: registrationToken
+  };
+   const notif = await admin.messaging().send(message).catch((err) => {console.log(err)})
+   return notif
+ }
+
+
+
+ async function sendNotificationForOrder(type, title, body, orderId, side, registrationToken){
+  const message = {
+    data : {
+      type: type,
+      orderId: orderId,
+      side: side
     },
     notification: {
       title: title,
