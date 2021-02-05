@@ -576,9 +576,9 @@ async function updateUserAdresses(userId, adresses){
    order_input.fees = parseInt(percentage(30, order_input.total_price))
    order_input.notificationSeller = 1
    const order = new Order(order_input)
-   await order.save().catch(err => {throw err})
+   const saved = await order.save().catch(err => {throw err})
    const userToSend = await getUserById(order_input.sellerId)
-   sendNotificationForOrder("new_order", "Nouvelle commande", "Vous avez une nouvelle commande.", order_input._id, "order_seller", userToSend.fcmToken)
+   sendNotificationForOrder("new_order", "Nouvelle commande", "Vous avez une nouvelle commande.", String(saved._id), "order_seller", userToSend.fcmToken)
    return true
  }
 
@@ -592,7 +592,7 @@ async function updateUserAdresses(userId, adresses){
    order_input.updatedAt = new Date().toISOString()
    const updated = await UpdateOrderBuyer(order_input, true)
    const userToSend = await getUserById(order_input.sellerId)
-   sendNotificationForOrder("order_cancelled", "Annulation", "Une commande vient d'etre annulé par le client.", order_input._id, "order_seller", userToSend.fcmToken)
+   sendNotificationForOrder("order_cancelled", "Annulation", "Une commande vient d'etre annulé par le client.", String(order_input.id), "order_seller", userToSend.fcmToken)
   return updated
  }
 
@@ -603,7 +603,7 @@ async function updateUserAdresses(userId, adresses){
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrderBuyer(order_input, false)
   const userToSend = await getUserById(order_input.sellerId)
-  sendNotificationForOrder("order_done", "Commande terminé", "Une commande vient de se terminer.", order_input._id, "order_seller", userToSend.fcmToken)
+  sendNotificationForOrder("order_done", "Commande terminé", "Une commande vient de se terminer.", String(order_input.id), "order_seller", userToSend.fcmToken)
   return updated
  }
 
@@ -616,7 +616,7 @@ async function updateUserAdresses(userId, adresses){
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrder(order_input, true)
   const userToSend = await getUserById(order_input.buyerID)
-  sendNotificationForOrder("order_refused", "Refus commande", "Votre commande n'a malheureusement pas été accepté.", order_input._id, "order_buyer", userToSend.fcmToken)
+  sendNotificationForOrder("order_refused", "Refus commande", "Votre commande n'a malheureusement pas été accepté.", String(order_input.id), "order_buyer", userToSend.fcmToken)
   return updated
  }
 
@@ -625,7 +625,7 @@ async function updateUserAdresses(userId, adresses){
   order_input.updatedAt = new Date().toISOString()
   const updated = await UpdateOrder(order_input, false)
   const userToSend = await getUserById(order_input.buyerID)
-  sendNotificationForOrder("order_accepted", "Acceptation commande", "Votre commande vient d'etre accepté.", order_input._id, "order_buyer", userToSend.fcmToken)
+  sendNotificationForOrder("order_accepted", "Acceptation commande", "Votre commande vient d'etre accepté.", order_input.id, "order_buyer", userToSend.fcmToken)
   return updated
  }
 
@@ -813,6 +813,7 @@ async function updateUserAdresses(userId, adresses){
 
 
  async function sendNotificationForOrder(type, title, body, orderId, side, registrationToken){
+   console.log(type, title, body, orderId, side, registrationToken)
   const message = {
     data : {
       type: type,

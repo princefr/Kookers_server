@@ -231,7 +231,7 @@ const resolvers = {
       return RateOrder(rating)
     },
 
-    createChatRoom: async(_, {user1, user2})=> {
+    createChatRoom: async(_, {user1, user2, uid})=> {
       return CreateRoom(user1, user2)
     },
 

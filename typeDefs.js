@@ -464,7 +464,7 @@ const typeDefs = gql`
     createPublication(publication: PublicationInput): Publication!
 
     createOrder(order: OrderInput): Boolean!
-    cancelOrder(order: OrderInput): Order!
+    cancelOrder(order: OrderInputBuyer): Order!
 
     createRating(rating: RatingInput): Rating!
     createReport(report: ReportInput): Report!
@@ -475,7 +475,7 @@ const typeDefs = gql`
     closePublication(publication_id: String, is_closed: Boolean): Publication!
     
 
-    createChatRoom(user1: String!, user2: String!): Room!
+    createChatRoom(user1: String!, user2: String!, uid: String!): Room!
     sendMessage(message: MessageInput): Boolean!
     updateAllMessageForUser(userID:String, roomId: String): Boolean!
 
