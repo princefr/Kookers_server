@@ -12,6 +12,7 @@
  mongoose.set('useUnifiedTopology', true);
 
  const NodeGeocoder = require('node-geocoder');
+ const { nanoid } = require('nanoid')
  
 const options = {
   provider: 'google',
@@ -124,6 +125,7 @@ var Rating = new Schema({
    currency: {type: String, required: true},
    user_baned: {type: Boolean, default: false},
    birth_date: {type: BirthDate, required: true},
+   shortId: {type: String, required: true},
    default_iban: {type: String},
    birth_place: String,
    is_recto_id: Boolean,
@@ -304,6 +306,9 @@ async function createStripeCustomer(email) {
       month : user.birth_date.month,
       year: user.birth_date.year
     }
+  },
+  business_proofile : {
+    url: "https://getkookers.com/users/" + user.shortId
   }
 })
   .catch(err => {throw err})
@@ -348,10 +353,11 @@ async function createStripeCustomer(email) {
  }
 
 
- async function MakePayout(account_id, amount, currency) {
+ async function MakePayout(account_id, amount, currency, destination) {
   const payout = await stripe.payouts.create({
     amount: amount,
     currency: currency,
+    destination: destination
   }, {
     stripeAccount: account_id,
   }).catch(err => {throw err})
@@ -423,6 +429,7 @@ async function uploadOneFile(file_data){
 
  async function createNewUser(user_input, ip) {
    const User = mongoose.model('User', UserSchema);
+   user_input.shortId = nanoid(10);
    const customerId = await createStripeCustomer(user_input.email)
    const stripeAccount = await createStripeCustomAccount(user_input, ip)
    user_input.customerId =  customerId
@@ -436,6 +443,12 @@ async function uploadOneFile(file_data){
 async function checkUserExist(firebase_uid){
   const User = mongoose.model('User', UserSchema);
   return User.findOne({"firebaseUID": firebase_uid}).catch(err => {throw err})
+}
+
+
+async function getuserpublic(userId){
+  const User = mongoose.model('User', UserSchema);
+  return User.findById(userId).catch(err => {throw err})
 }
 
 async function getUserById(userId) {
@@ -911,5 +924,5 @@ async function updateUserAdresses(userId, adresses){
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
           updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction,
-           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData}
+           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData, getuserpublic}
 

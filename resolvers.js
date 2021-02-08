@@ -9,7 +9,8 @@ const {createNewPublication, createNewUser, checkUserExist,
       getOrderOwnedByUserBuyer, getOrderOwnedByUserSeller, loadCartList, attachPaymentToCustomer,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
         refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
-         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource, updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer} = require("./database");
+         createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource,
+          updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer, getuserpublic} = require("./database");
 
 const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -198,6 +199,10 @@ const resolvers = {
       return  getBalanceTransaction(accountId)
     },
 
+    getuserpublic: async(_, {userId}) => {
+      return  getuserpublic(userId)
+    },
+
 
     
 
@@ -305,8 +310,8 @@ const resolvers = {
     
 
 
-    makePayout: async(_, {account_id, amount, currency,}) => {
-      return MakePayout(account_id, amount, currency)
+    makePayout: async(_, {account_id, amount, currency, destination}) => {
+      return MakePayout(account_id, amount, currency, destination)
     },
 
     createBankAccountOnConnect: async(_, {account_id, country, currency, account_number}) => {

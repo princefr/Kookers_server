@@ -72,8 +72,8 @@ const typeDefs = gql`
     sellerId: String!
     is_open: Boolean!
     geohash: String!
-    createdAt: Date
-    updateAt: Date
+    createdAt: String
+    updateAt: String
     seller: User
     rating: RatingUser
   }
@@ -454,6 +454,7 @@ const typeDefs = gql`
     getPayoutList(accountId: String!): [Payout]!
     listExternalAccount(accountId: String!): [BankAccount]!
     getBalanceTransaction(accountId: String!): [TransactionStripe]!
+    getuserpublic(userId: String): User
     
 
   }
@@ -495,7 +496,7 @@ const typeDefs = gql`
 
 
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
-    makePayout(account_id: String!, amount: String!, currency: String!): Payout
+    makePayout(account_id: String!, amount: Int!, currency: String!, destination: String!): Payout
 
     
 
