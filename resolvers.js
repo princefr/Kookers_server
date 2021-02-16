@@ -10,7 +10,7 @@ const {createNewPublication, createNewUser, checkUserExist,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
         refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
          createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource,
-          updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer, getuserpublic} = require("./database");
+          updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer, getuserpublic, retrieveAccount, setIsSeller} = require("./database");
 
 const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -149,6 +149,32 @@ const resolvers = {
       return usersLoader.load(parent.sellerId)
     }
 
+  },
+
+  User: {
+    stripeAccount(parent, args, context){
+      return retrieveAccount(parent.stripe_account)
+    }, 
+
+    balance(parent, args, context){
+      return getConnecedAccountBalance(parent.stripe_account)
+    },
+
+    transactions(parent, args, context){
+      return getBalanceTransaction(parent.stripe_account)
+    },
+
+    all_cards(parent, args, context){
+      return loadCartList(parent.customerId)
+    },
+
+    ibans(parent, args, context) {
+      return listExternalAccount(parent.stripe_account)
+    }
+
+
+
+
     
   },
 
@@ -243,8 +269,7 @@ const resolvers = {
 
     sendMessage: async(_, {message}) => {
       pubsub.publish('MESSAGE_ADDED', { messageAdded: message });
-      const messageFromDB = createMessage(message)
-      
+      createMessage(message)
       return true
     },
 
@@ -257,13 +282,9 @@ const resolvers = {
       return createStripeCustomer(email)
     },
 
-
     addattachPaymentToCustomer: async(_, {customer_id, methode_id}) => {
       return attachPaymentToCustomer(customer_id, methode_id)
     },
-
-
-
 
     updateUserImage: async(_, {userID, imageUrl}) => {
       return updateUserImage(userID, imageUrl)
@@ -272,7 +293,6 @@ const resolvers = {
     updateSettings: async(_, {userID, settings}) => {
       return updateSettings(userID, settings)
     },
-
 
     updateUserAdresses: async(_, {userID, adresses}) => {
       return updateUserAdresses(userID, adresses)
@@ -334,6 +354,10 @@ const resolvers = {
     cleanNotificationBuyer: async(_, {orderId}) => {
       return cleanNotificationBuyer(orderId)
     },
+
+    setIsSeller: async(_, {userId}) => {
+      return setIsSeller(userId)
+    } 
 
 
   }

@@ -50,9 +50,8 @@ const typeDefs = gql`
     title: String!
     description: String!
     type: SellingType!
-    food_preferences: [FoodPreferenceInput]!
+    food_preferences: [String]!
     price_all: String!
-    price_per_pie: String!
     adress: AdressInput!
     photoUrls: [String]!
     sellerId: String!
@@ -64,9 +63,8 @@ const typeDefs = gql`
     title: String!
     description: String!
     type: SellingType!
-    food_preferences: [FoodPreference]!
+    food_preferences: [String]!
     price_all: Float!
-    price_per_pie: Float!
     adress: Adress
     photoUrls: [String]!
     sellerId: String!
@@ -142,6 +140,12 @@ const typeDefs = gql`
     default_source: String
     default_iban: String
     stripe_account: String
+    stripeAccount: StripeAccount
+    balance: Balance
+    transactions : [TransactionStripe]
+    all_cards: [CreditCard]
+    ibans: [BankAccount]
+    is_seller: Boolean
   }
 
   input LocationInput {
@@ -169,9 +173,6 @@ const typeDefs = gql`
   }
 
 
-
-
-
   input OrderInputBuyer {
     id: ID
     productId: String
@@ -185,11 +186,14 @@ const typeDefs = gql`
     id: ID
     productId: String
     quantity: Int
+    fees: String
+    total_with_fees: String
     total_price: String
     createdAt: String
     updatedAt: String
     deliveryDay: String!
     buyerID: String!
+    title: String
     orderState: OrderState!
     sellerId: String!
     currency: String
@@ -197,6 +201,7 @@ const typeDefs = gql`
     seller_stripe_account: String
     payment_method_id: String
     customerId: String
+    adress: Adress
   }
 
   type Order {
@@ -208,6 +213,8 @@ const typeDefs = gql`
     createdAt: String
     updateAt: String
     buyerID: String
+    fees: String
+    total_with_fees: String
     deliveryDay: String
     orderState: OrderState
     sellerId: String
@@ -217,6 +224,7 @@ const typeDefs = gql`
     notificationBuyer: Int
     notificationSeller : Int
     currency: String
+    adress: Adress
   }
 
 
@@ -267,13 +275,12 @@ const typeDefs = gql`
     notificationCountUser_2: Int
     users: [String!]!
     receiver: User
-
   }
 
 
   input UserSettingsInput {
-    food_preferences: [FoodPreferenceInput]
-    food_price_ranges : [FoodPriceRangeInput]
+    food_preferences: [String]
+    food_price_ranges : [String]
     distance_from_seller: Float!
     createdAt: String
     updatedAt: String
@@ -281,8 +288,8 @@ const typeDefs = gql`
   }
 
   type UserSettings {
-    food_preferences: [FoodPreference]
-    food_price_ranges : [FoodPriceRange]
+    food_preferences: [String]
+    food_price_ranges : [String]
     distance_from_seller: Float
     createdAt: Date
     updatedAt: Date
@@ -379,6 +386,27 @@ const typeDefs = gql`
   type Error {
     type: String
     message: String
+  }
+
+
+  type StripeRequierment {
+    currently_due: [String]
+    eventually_due: [String]
+    past_due : [String]
+    current_deadline: Int
+    pending_verification: [String]
+    disabled_reason: String
+  }
+
+
+  type StripeAccount {
+    id: String
+    charges_enabled: Boolean
+    country: String
+    created: Int
+    payouts_enabled: Boolean
+    email: String
+    requirements: StripeRequierment
   }
 
 
@@ -494,9 +522,9 @@ const typeDefs = gql`
     updateIbanSource(userId: String!, iban: String!): String!
     updateFirebasetoken(userId: String!, token: String!): String!
 
-
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: Int!, currency: String!, destination: String!): Payout
+    setIsSeller(userId: String!): User
 
     
 

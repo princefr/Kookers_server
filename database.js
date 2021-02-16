@@ -4,7 +4,6 @@
  const stripe = require("stripe")("sk_test_51623aEF9cRDonA7mdWZMgKJ7lVKjYwnKZmZLra2vdJSkrIrfYOe6uXRpZHS0kAYgdQOQBJRaw0hqgznFLP52Oal400AvkyDjeO");
  const DataLoader = require("dataloader");
  const {groupBy, map} = require("ramda");
- var moment = require('moment');
 
  mongoose.set('useNewUrlParser', true);
  mongoose.set('useFindAndModify', false);
@@ -92,8 +91,8 @@ var Rating = new Schema({
 }, { _id : false })
 
  var UserSettingsSchema = new Schema({
-   food_preferences: [FoodPreferenceSchema],
-   food_price_ranges : [FoodPriceRangeSchema],
+   food_preferences: [],
+   food_price_ranges : [],
    distance_from_seller:  Number,
    createdAt: { type: Date, default: Date.now },
    updatedAt: { type: Date, default: Date.now }
@@ -107,9 +106,8 @@ var Rating = new Schema({
    phonenumber: {type: String, required: true},
    settings: {type: UserSettingsSchema, default: {
     "distance_from_seller": 45,
-    "food_preferences": [{id: 0, title: "Végétarien", is_selected: false}, {id: 1, title: "Vegan", is_selected: false}, {id: 2, title: "Sans gluten", is_selected: false},
-    {id: 3, title: "Hallal", is_selected: false}, {id: 4, title: "Adapté aux allergies alimentaires", is_selected: false}],
-    "food_price_ranges": [{id: 0, title: "$", is_selected: false}, {id: 1, title: "$$", is_selected: false}, {id: 2, title: "$$$", is_selected: false}, {id: 3, title: "$$$$", is_selected: false}]
+    "food_preferences": [],
+    "food_price_ranges": []
    }},
    adresses: [Adress],
    firebaseUID: {type: String, required: true},
@@ -127,9 +125,7 @@ var Rating = new Schema({
    birth_date: {type: BirthDate, required: true},
    shortId: {type: String, required: true},
    default_iban: {type: String},
-   birth_place: String,
-   is_recto_id: Boolean,
-   is_verso_id: Boolean,
+   is_seller : {type: Boolean, default: false}
  })
 
  var RoomSchema = new Schema({
@@ -164,6 +160,7 @@ var Rating = new Schema({
    stripeTransactionId: {type: String, required: true},
    quantity: Number,
    total_price: Number,
+   shortId: {type: String, default: nanoid(10)},
    createdAt: { type: Date, default: Date.now },
    updatedAt: { type: Date, default: Date.now },
    buyerID: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
@@ -176,7 +173,9 @@ var Rating = new Schema({
    payment_method_id: {type: String, required: true},
    deliveryDay: String,
    currency: {type: String, required: true},
-   fees: {type: String, required: true}
+   fees: {type: String, required: true},
+   total_with_fees: {type: String},
+   adress: {type: Adress, required: true}
  })
 
  var PublicationSchema = new Schema({
@@ -184,7 +183,7 @@ var Rating = new Schema({
    title: {type: String, required: true},
    description: {type: String, required: true},
    type: {type: String, required: true},
-   food_preferences: [FoodPreferenceSchema],
+   food_preferences: [],
    price_all: Number,
    price_per_pie: Number,
    adress: Adress,
@@ -229,21 +228,25 @@ async function createStripeCustomer(email) {
 }
 
 
- function percentage(percent, total) {
-  return ((percent/ 100) * total).toFixed(2)
+ function percentage(percent, total, total_with_fees) {
+   const fee = total_with_fees - total;
+   const appFee = ((percent/ 100) * total)
+   const totalAmount = appFee + fee
+
+  return totalAmount
 }
 
 
- async function createPaymentIntent(total, currency, paymentmethod, connectedAccount, customer) {
+ async function createPaymentIntent(total_with_fees, total,  currency, paymentmethod, connectedAccount, customer, email, description) {
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: total,
+    amount: total_with_fees,
     currency: currency,
     customer : customer,
-    description: "Kookers commande - ",
+    description: description,
     payment_method: paymentmethod,
     confirm: false,
-    receipt_email: "pondonda@gmail.com",
-    application_fee_amount: parseInt(percentage(30, total)),
+    receipt_email: email,
+    application_fee_amount: parseInt(percentage(15, total, total_with_fees)),
     transfer_data: {
       destination: connectedAccount,
     },
@@ -307,7 +310,7 @@ async function createStripeCustomer(email) {
       year: user.birth_date.year
     }
   },
-  business_proofile : {
+  business_profile : {
     url: "https://getkookers.com/users/" + user.shortId
   }
 })
@@ -448,7 +451,7 @@ async function checkUserExist(firebase_uid){
 
 async function getuserpublic(userId){
   const User = mongoose.model('User', UserSchema);
-  return User.findById(userId).catch(err => {throw err})
+  return User.findOne({"shortId": userId}).catch(err => {throw err})
 }
 
 async function getUserById(userId) {
@@ -479,6 +482,15 @@ async function loadFees() {
 async function updateUser(userId, user) {
   const User = mongoose.model('User', UserSchema)
   return User.findOneAndUpdate({id: userId}, {user}).catch(err => {throw err})
+}
+
+
+async function setIsSeller(userId){
+  const User = mongoose.model('User', UserSchema)
+  await User.findOneAndUpdate({"_id": userId}, {is_seller: true}).catch(err => {throw err})
+  const user = User.findOne({"_id": userId}).catch(err => {throw err})
+  return user
+
 }
 
 
@@ -583,10 +595,11 @@ async function updateUserAdresses(userId, adresses){
  /////// order handling
  async function createNewOrder(order_input) {
    const seller = await getUserById(order_input.sellerId)
+   const buyer = await getUserById(order_input.buyerID)
    const Order = mongoose.model("Order", OrderSchema)
-   const paymentIntent = await createPaymentIntent(order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId).catch((err) => {throw err})
+   const description = "x" + String(order_input.quantity) + " " + order_input.title;
+   const paymentIntent = await createPaymentIntent(order_input.total_with_fees * 100, order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId, buyer.email, description).catch((err) => {throw err})
    order_input.stripeTransactionId = paymentIntent.id
-   order_input.fees = parseInt(percentage(30, order_input.total_price))
    order_input.notificationSeller = 1
    const order = new Order(order_input)
    const saved = await order.save().catch(err => {throw err})
@@ -826,7 +839,6 @@ async function updateUserAdresses(userId, adresses){
 
 
  async function sendNotificationForOrder(type, title, body, orderId, side, registrationToken){
-   console.log(type, title, body, orderId, side, registrationToken)
   const message = {
     data : {
       type: type,
@@ -924,5 +936,5 @@ async function updateUserAdresses(userId, adresses){
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
           updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction,
-           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData, getuserpublic}
+           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData, getuserpublic, retrieveAccount, setIsSeller}
 
