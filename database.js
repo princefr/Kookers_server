@@ -175,7 +175,7 @@ var Rating = new Schema({
    currency: {type: String, required: true},
    fees: {type: String, required: true},
    total_with_fees: {type: String},
-   adress: {type: Adress, required: true}
+   adress: {type: Adress, required: true, default: {title: "303 Quai aux Fleurs, Évry-Courcouronnes, France", location: {latitude: 48.6321799, longitude:2.4276286}}}
  })
 
  var PublicationSchema = new Schema({
@@ -194,6 +194,7 @@ var Rating = new Schema({
    rating : {type: Rating, default: {rating_total: 0.0, rating_count: 0}},
    createdAt: { type: Date, default: Date.now },
    updatedAt: { type: Date, default: Date.now },
+   currency: {type: String, required: true, default:"eur"},
  })
 
 

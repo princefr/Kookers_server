@@ -56,6 +56,7 @@ const typeDefs = gql`
     photoUrls: [String]!
     sellerId: String!
     geohash: String!
+    currency: String!
   }
 
   type Publication {
@@ -74,6 +75,7 @@ const typeDefs = gql`
     updateAt: String
     seller: User
     rating: RatingUser
+    currency: String!
   }
 
 
@@ -201,7 +203,7 @@ const typeDefs = gql`
     seller_stripe_account: String
     payment_method_id: String
     customerId: String
-    adress: Adress
+    adress: AdressInput
   }
 
   type Order {
@@ -211,7 +213,7 @@ const typeDefs = gql`
     quantity: String
     total_price: String
     createdAt: String
-    updateAt: String
+    updatedAt: String
     buyerID: String
     fees: String
     total_with_fees: String
@@ -224,6 +226,7 @@ const typeDefs = gql`
     notificationBuyer: Int
     notificationSeller : Int
     currency: String
+    shortId: String
     adress: Adress
   }
 
