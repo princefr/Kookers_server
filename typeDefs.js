@@ -76,6 +76,7 @@ const typeDefs = gql`
     seller: User
     rating: RatingUser
     currency: String!
+    shortId: String
   }
 
 

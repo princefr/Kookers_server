@@ -40,30 +40,6 @@ const geocoder = NodeGeocoder(options);
   updatedAt: { type: Date, default: Date.now }
 }, { _id : false })
 
- var BuyerFees = new Schema({
-  id: Number,
-  title: String,
-  is_selected: Boolean
-}, { _id : false })
-
-
-var SellerFees = new Schema({
-  id: Number,
-  title: String,
-  is_selected: Boolean
-}, { _id : false })
-
- var FoodPreferenceSchema = new Schema({
-  id: Number,
-  title: String,
-  is_selected: Boolean
-}, { _id : false })
-
-var FoodPriceRangeSchema = new Schema({
-  id: Number,
-  title: String,
-  is_selected: Boolean
-}, { _id : false })
 
 var LocationSchema = new Schema({
   latitude: Number,
@@ -94,8 +70,8 @@ var Rating = new Schema({
    food_preferences: [],
    food_price_ranges : [],
    distance_from_seller:  Number,
-   createdAt: { type: Date, default: Date.now },
-   updatedAt: { type: Date, default: Date.now }
+   createdAt: { type: Date, default: new Date().toISOString() },
+   updatedAt: { type: Date, default: new Date().toISOString() }
  }, { _id : false })
 
  var UserSchema = new Schema ({
@@ -160,9 +136,9 @@ var Rating = new Schema({
    stripeTransactionId: {type: String, required: true},
    quantity: Number,
    total_price: Number,
-   shortId: {type: String, default: nanoid(10)},
-   createdAt: { type: Date, default: Date.now },
-   updatedAt: { type: Date, default: Date.now },
+   shortId: {type: String},
+   createdAt: { type: Date, default: new Date().toISOString() },
+   updatedAt: { type: Date, default: new Date().toISOString() },
    buyerID: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
    orderState: {type: String, required: true},
    refoundId: String,
@@ -175,7 +151,7 @@ var Rating = new Schema({
    currency: {type: String, required: true},
    fees: {type: String, required: true},
    total_with_fees: {type: String},
-   adress: {type: Adress, required: true, default: {title: "303 Quai aux Fleurs, Évry-Courcouronnes, France", location: {latitude: 48.6321799, longitude:2.4276286}}}
+   adress: {type: Adress, required: true}
  })
 
  var PublicationSchema = new Schema({
@@ -192,9 +168,10 @@ var Rating = new Schema({
    is_open: {type: Boolean, required: true, default: true},
    geohash: {type: String, required: true},
    rating : {type: Rating, default: {rating_total: 0.0, rating_count: 0}},
-   createdAt: { type: Date, default: Date.now },
-   updatedAt: { type: Date, default: Date.now },
+   createdAt: { type: Date, default: new Date().toISOString() },
+   updatedAt: { type: Date, default: new Date().toISOString() },
    currency: {type: String, required: true, default:"eur"},
+   shortId: {type: String, required: true}
  })
 
 
@@ -541,6 +518,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function createNewPublication(publication_input) {
    const Publication = mongoose.model("Publication", PublicationSchema)
+   publication_input.shortId = nanoid(10)
    const publication = new Publication(publication_input)
    await publication.save().catch(err => {throw err})
    return publication
@@ -602,6 +580,7 @@ async function updateUserAdresses(userId, adresses){
    const paymentIntent = await createPaymentIntent(order_input.total_with_fees * 100, order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId, buyer.email, description).catch((err) => {throw err})
    order_input.stripeTransactionId = paymentIntent.id
    order_input.notificationSeller = 1
+   order_input.shortId = nanoid(10)
    const order = new Order(order_input)
    const saved = await order.save().catch(err => {throw err})
    const userToSend = await getUserById(order_input.sellerId)
