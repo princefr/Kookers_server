@@ -295,8 +295,8 @@ const typeDefs = gql`
     food_preferences: [String]
     food_price_ranges : [String]
     distance_from_seller: Float
-    createdAt: Date
-    updatedAt: Date
+    createdAt: String
+    updatedAt: String
   }
 
 
@@ -316,7 +316,7 @@ const typeDefs = gql`
     publicationId: String!
     orderId: String!
     whoRate: String!
-    createdAt: Date
+    createdAt: String
   }
 
   type RatingUser {

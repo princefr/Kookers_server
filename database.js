@@ -1,7 +1,7 @@
  const mongoose = require('mongoose');
  const admin = require("firebase-admin")
  const credentialFirebase = require("./admin_credentials.json");
- const stripe = require("stripe")("sk_test_51623aEF9cRDonA7mdWZMgKJ7lVKjYwnKZmZLra2vdJSkrIrfYOe6uXRpZHS0kAYgdQOQBJRaw0hqgznFLP52Oal400AvkyDjeO");
+ const stripe = require("stripe")(process.env.Stripe_sKey);
  const DataLoader = require("dataloader");
  const {groupBy, map} = require("ramda");
 
@@ -15,10 +15,9 @@
  
 const options = {
   provider: 'google',
- 
   // Optional depending on the providers
 
-  apiKey: 'AIzaSyAbJoAWoANYPFagvaiNOAd8vJZGY7SV0Hs', // for Mapquest, OpenCage, Google Premier
+  apiKey: process.env.Google_place_key, // for Mapquest, OpenCage, Google Premier
   formatter: null // 'gpx', 'string', ...
 };
 
@@ -29,15 +28,17 @@ const geocoder = NodeGeocoder(options);
   databaseURL: 'https://kookers-4e54e.firebaseio.com'
 });
 
- mongoose.connect('mongodb+srv://princeondonda:4qF0PF11794591@cluster0.myzbc.mongodb.net/<dbname>?retryWrites=true&w=majority', {useNewUrlParser: true});
+
+
+ mongoose.connect(process.env.MongoDBUrl, {useNewUrlParser: true});
  const Schema = mongoose.Schema;
 
 
  var Fees = new Schema({
   buyerFees: Number,
   sellerFees: Number,
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  createdAt: { type: String, default: Date.now },
+  updatedAt: { type: String, default: Date.now }
 }, { _id : false })
 
 
@@ -70,8 +71,8 @@ var Rating = new Schema({
    food_preferences: [],
    food_price_ranges : [],
    distance_from_seller:  Number,
-   createdAt: { type: Date, default: new Date().toISOString() },
-   updatedAt: { type: Date, default: new Date().toISOString() }
+   createdAt: { type: String, default: new Date().toISOString() },
+   updatedAt: { type: String, default: new Date().toISOString() }
  }, { _id : false })
 
  var UserSchema = new Schema ({
@@ -137,8 +138,8 @@ var Rating = new Schema({
    quantity: Number,
    total_price: Number,
    shortId: {type: String},
-   createdAt: { type: Date, default: new Date().toISOString() },
-   updatedAt: { type: Date, default: new Date().toISOString() },
+   createdAt: { type: String, default: new Date().toISOString() },
+   updatedAt: { type: String, default: new Date().toISOString() },
    buyerID: {type: Schema.Types.ObjectId, ref: 'Users', required: true},
    orderState: {type: String, required: true},
    refoundId: String,
@@ -168,8 +169,8 @@ var Rating = new Schema({
    is_open: {type: Boolean, required: true, default: true},
    geohash: {type: String, required: true},
    rating : {type: Rating, default: {rating_total: 0.0, rating_count: 0}},
-   createdAt: { type: Date, default: new Date().toISOString() },
-   updatedAt: { type: Date, default: new Date().toISOString() },
+   createdAt: { type: String, default: new Date().toISOString() },
+   updatedAt: { type: String, default: new Date().toISOString() },
    currency: {type: String, required: true, default:"eur"},
    shortId: {type: String, required: true}
  })
@@ -549,7 +550,9 @@ async function updateUserAdresses(userId, adresses){
 
  async function getPublicationViaGeohash(lowervalue, greathervalue, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
-  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}}).catch(err => {throw err})
+  const user = await getUserById(userId)
+  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}, "food_preferences": {$in: user.settings.food_preferences}}).catch(err => {throw err})
+  
  }
 
  async function getPublicationsOwnedByUser(userId){
