@@ -125,6 +125,7 @@ var Rating = new Schema({
    message: {type: String, required: true},
    is_sent: {type: Boolean, default: true},
    is_read: {type: Boolean, default: false},
+   reaction : {type: String, default: ""},
    message_photo: String
  })
 
@@ -172,7 +173,9 @@ var Rating = new Schema({
    createdAt: { type: String, default: new Date().toISOString() },
    updatedAt: { type: String, default: new Date().toISOString() },
    currency: {type: String, required: true, default:"eur"},
-   shortId: {type: String, required: true}
+   shortId: {type: String, required: true},
+   likeCount: {type: Number, default:0},
+   likes: {type: [], default: []}
  })
 
 
@@ -207,6 +210,56 @@ async function createStripeCustomer(email) {
 }
 
 
+
+async function stripeFile(file, stripeAccount){
+  const fileuploaded = await stripe.files.create({purpose: 'identity_document', file: file}, {stripeAccount: stripeAccount}).catch((err) => {throw err});
+  return fileuploaded;
+}
+
+
+async function updateIdDocument(accountId, fileId){
+  const account = await stripe.accounts.update(
+      accountId,
+      {individual : {
+          verification : {
+              document : {
+                  back: fileId, // file id
+              },
+          }
+      }}
+    ).catch((e) => {
+      throw e
+    });
+
+    return account;
+}
+
+async function updateIdAdressProof(accountId, fileId){
+  const account = await stripe.accounts.update(
+      accountId,
+      {individual : {
+          verification : {
+              additional_document: {
+                  back: fileId, // file id
+              }
+          }
+      }}
+    ).catch((e) => {
+      throw e 
+    });
+    return account
+}
+
+
+
+async function uploadFileStripe(file, type, stripeAccount){
+  const _file = {data: file.createReadStream(), name: 'file.jpg', type: 'application/octet-stream'}
+  const fileuploaded = await stripeFile(_file, stripeAccount)
+  type == "passport" ? await updateIdDocument(stripeAccount, fileuploaded.id) : await updateIdAdressProof(stripeAccount, fileuploaded.id);
+  return fileuploaded.id
+}
+
+
  function percentage(percent, total, total_with_fees) {
    const fee = total_with_fees - total;
    const appFee = ((percent/ 100) * total)
@@ -217,6 +270,7 @@ async function createStripeCustomer(email) {
 
 
  async function createPaymentIntent(total_with_fees, total,  currency, paymentmethod, connectedAccount, customer, email, description) {
+  console.log(total_with_fees)
   const paymentIntent = await stripe.paymentIntents.create({
     amount: total_with_fees,
     currency: currency,
@@ -352,8 +406,6 @@ async function createStripeCustomer(email) {
   const payouts = await stripe.payouts.list({stripeAccount: account_id,}).catch(err => {throw err});
   return payouts.data
  }
-
-
 
 
  async function loadCartList(customer) {
@@ -526,6 +578,22 @@ async function updateUserAdresses(userId, adresses){
  }
 
 
+ async function setLike(likeId, userId){
+  const Publication = mongoose.model("Publication", PublicationSchema)
+  await Publication.update({"_id": likeId, "likes": {$ne: userId}}, {$inc : {"likeCount": 1}, $push: {"likes": userId}}).catch((err) => {throw err})
+  return true
+ }
+
+ 
+
+
+ async function setDisklike(likeId, userId) {
+  const Publication = mongoose.model("Publication", PublicationSchema)
+  await Publication.update({"_id": likeId}, {$inc : {"likeCount": -1}, $pull: {"likes": userId}}).catch((err) => {throw err})
+  return false;
+ }
+
+
  async function getPublicationByid(pubId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
   return Publication.findById(pubId)
@@ -580,7 +648,7 @@ async function updateUserAdresses(userId, adresses){
    const buyer = await getUserById(order_input.buyerID)
    const Order = mongoose.model("Order", OrderSchema)
    const description = "x" + String(order_input.quantity) + " " + order_input.title;
-   const paymentIntent = await createPaymentIntent(order_input.total_with_fees * 100, order_input.total_price * 100, order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId, buyer.email, description).catch((err) => {throw err})
+   const paymentIntent = await createPaymentIntent(Math.round(order_input.total_with_fees * 100), Math.round(order_input.total_price * 100), order_input.currency, order_input.payment_method_id, seller.stripe_account, order_input.customerId, buyer.email, description).catch((err) => {throw err})
    order_input.stripeTransactionId = paymentIntent.id
    order_input.notificationSeller = 1
    order_input.shortId = nanoid(10)
@@ -919,5 +987,6 @@ async function updateUserAdresses(userId, adresses){
         PublicationDataloader, loadCartList, attachPaymentToCustomer,
          updateUserImage, updateSettings, updateUserAdresses, validateOrder, refuseOrder, acceptOrder,
           updateDefaultSource, createBankAccountOnConnect, MakePayout, PayoutList, listExternalAccount, getBalanceTransaction,
-           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData, getuserpublic, retrieveAccount, setIsSeller}
+           updateAllMessageForUser, updateIbanSource, updateFirebasetoken,  cleanNotificationSeller, cleanNotificationBuyer, ValidateAuthData,
+            getuserpublic, retrieveAccount, setIsSeller, uploadFileStripe, setLike, setDisklike}
 
