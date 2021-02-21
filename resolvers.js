@@ -10,7 +10,8 @@ const {createNewPublication, createNewUser, checkUserExist,
        updateUserImage, updateSettings, updateUserAdresses, validateOrder, acceptOrder,
         refuseOrder, updateDefaultSource, MakePayout, PayoutList, listExternalAccount,
          createBankAccountOnConnect, getBalanceTransaction, updateAllMessageForUser, updateIbanSource,
-          updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer, getuserpublic, retrieveAccount, setIsSeller} = require("./database");
+          updateFirebasetoken, cleanNotificationSeller, cleanNotificationBuyer, getuserpublic,
+           retrieveAccount, setIsSeller, uploadFileStripe, setLike, setDisklike} = require("./database");
 
 const _ = require('lodash');
 const { parse , GraphQLScalarType, GraphQLError} = require("graphql");
@@ -125,6 +126,14 @@ const resolvers = {
       const { loaders } = context
       const {usersLoader} = loaders
       return usersLoader.load(parent.sellerId)
+    },
+
+    likes(parent, args, context){
+      //const { loaders } = context
+      // const {usersLoader} = loaders
+
+      const userCalling = context.authScope.body.variables.userId
+      return parent.likes.includes(userCalling)
     }
 
   }, 
@@ -357,7 +366,22 @@ const resolvers = {
 
     setIsSeller: async(_, {userId}) => {
       return setIsSeller(userId)
-    } 
+    },
+
+    uploadFile: async(_, {file, type, stripeAccount}) => {
+      return file.then(function(_file){
+        return uploadFileStripe(_file, type, stripeAccount)
+      })
+    },
+
+
+    setLike: async(_, {likeId, userId}) => {
+      return setLike(likeId, userId)
+    },
+
+    setDisklike: async(_, {likeId, userId}) => {
+      return setDisklike(likeId, userId)
+    },
 
 
   }

@@ -70,6 +70,8 @@ const typeDefs = gql`
     photoUrls: [String]!
     sellerId: String!
     is_open: Boolean!
+    likeCount: Int!
+    likes: Boolean!
     geohash: String!
     createdAt: String
     updateAt: String
@@ -529,6 +531,12 @@ const typeDefs = gql`
     createBankAccountOnConnect(account_id: String!, country:String!, currency: String!, account_number: String!): BankAccount
     makePayout(account_id: String!, amount: Int!, currency: String!, destination: String!): Payout
     setIsSeller(userId: String!): User
+
+    uploadFile(file: Upload!, type: String!, stripeAccount: String!): String!
+
+
+    setLike(likeId: String!, userId: String!): Boolean!
+    setDisklike(likeId: String!, userId: String!): Boolean!
 
     
 
