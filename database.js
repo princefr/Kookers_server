@@ -619,8 +619,8 @@ async function updateUserAdresses(userId, adresses){
  async function getPublicationViaGeohash(lowervalue, greathervalue, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
   const user = await getUserById(userId)
-  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}, "food_preferences": {$in: user.settings.food_preferences}}).catch(err => {throw err})
-  
+  if(user.settings.food_preferences.length > 0) return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}, "food_preferences": {$in: user.settings.food_preferences}}).catch(err => {throw err})
+  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}}).catch(err => {throw err})
  }
 
  async function getPublicationsOwnedByUser(userId){
@@ -629,17 +629,11 @@ async function updateUserAdresses(userId, adresses){
   return pub
  }
 
-
-
-
  async function getPublicationAndUpdateIsOpen(pubId, is_open){
   const Publication = mongoose.model("Publication", PublicationSchema)
   const publication =  await Publication.findOneAndUpdate({_id: pubId}, {is_open: is_open, updateAt: Date.now() }).catch(err => {throw err})
   return publication
  }
-
-
-
 
 
  /////// order handling
