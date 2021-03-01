@@ -201,10 +201,18 @@ var Rating = new Schema({
  })
 
 
- 
- ///// Payment logic with stripe
+ async function signInAnonymous() {
+   const customerId = anonymousCustomer();
+
+ }
  
 async function createStripeCustomer(email) {
+  const result = await stripe.customers.create({email: email}).catch(err => {throw err})
+  return result.id
+}
+
+
+async function anonymousCustomer(){
   const result = await stripe.customers.create({email: email}).catch(err => {throw err})
   return result.id
 }
@@ -580,7 +588,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function setLike(likeId, userId){
   const Publication = mongoose.model("Publication", PublicationSchema)
-  await Publication.update({"_id": likeId, "likes": {$ne: userId}}, {$inc : {"likeCount": 1}, $push: {"likes": userId}}).catch((err) => {throw err})
+  await Publication.updateOne({"_id": likeId, "likes": {$ne: userId}}, {$inc : {"likeCount": 1}, $push: {"likes": userId}}).catch((err) => {throw err})
   return true
  }
 
@@ -589,7 +597,7 @@ async function updateUserAdresses(userId, adresses){
 
  async function setDisklike(likeId, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
-  await Publication.update({"_id": likeId}, {$inc : {"likeCount": -1}, $pull: {"likes": userId}}).catch((err) => {throw err})
+  await Publication.updateOne({"_id": likeId}, {$inc : {"likeCount": -1}, $pull: {"likes": userId}}).catch((err) => {throw err})
   return false;
  }
 
@@ -613,14 +621,15 @@ async function updateUserAdresses(userId, adresses){
   return mapped.flat()
  }
 
-
-
-
  async function getPublicationViaGeohash(lowervalue, greathervalue, userId) {
   const Publication = mongoose.model("Publication", PublicationSchema)
-  const user = await getUserById(userId)
-  if(user.settings.food_preferences.length > 0) return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}, "food_preferences": {$in: user.settings.food_preferences}}).catch(err => {throw err})
-  return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}}).catch(err => {throw err})
+  if(userId != null) {
+    const user = await getUserById(userId)
+    if(user.settings.food_preferences.length > 0) return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}, "food_preferences": {$in: user.settings.food_preferences}}).catch(err => {throw err})
+    return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "sellerId": {$ne: userId}, "is_open": {$ne: false}}).catch(err => {throw err})
+  }else{
+    return await Publication.find({"geohash": {$gte: lowervalue, $lte:greathervalue}, "is_open": {$ne: false}}).catch(err => {throw err})
+  }
  }
 
  async function getPublicationsOwnedByUser(userId){

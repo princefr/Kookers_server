@@ -470,15 +470,16 @@ const typeDefs = gql`
     messageAdded(roomID: ID!): Message
     messageRead(roomID: ID!, listener: String): Boolean
     userIsWriting(roomID: ID!): Boolean
-    orderUpdated(id: ID!): Order
     roomUpdated(id: ID!): Room
+    orderUpdatedBuyer(listener: String!): Order
+    orderUpdatedSeller(listener: String!): Order
     
   }
 
   type Query {
     books: [Book]
     usersExist(firebase_uid: String): User
-    getPublicationViaGeo(greather: String!, lesser: String!, userId: String!): [Publication]!
+    getPublicationViaGeo(greather: String!, lesser: String!, userId: String): [Publication]!
     getUserRooms(userId: String!): [Room]
     accountbalance(account_id: String): Balance!
     getpublicationOwned(userId: String): [Publication]!

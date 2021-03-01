@@ -91,17 +91,31 @@ const resolvers = {
       subscribe: withFilter(
         () => pubsub.asyncIterator(['USER_IS_WRITING']),
         (payload, args) => {
-          return payload.orderUpdated.id == args.id
+          return payload.roomId == args.roomID && payload.userID != args.listener
       })
     },
 
-    orderUpdated : {
+    orderUpdatedBuyer : {
       subscribe: withFilter(
-        () => pubsub.asyncIterator(['ORDER_UPDATED']),
+        () => pubsub.asyncIterator(['ORDER_UPDATED_BUYER']),
         (payload, args) => {
-          return payload.orderUpdated.id == args.id
+          console.log(payload.order.buyerID)
+          console.log(args.listener)
+          return payload.order.buyerID == args.listener
       })
     },
+
+    orderUpdatedSeller : {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(['ORDER_UPDATED_SELLER']),
+        (payload, args) => {
+          console.debug(payload)
+          console.log(args)
+          return payload.order.sellerId == args.listener
+      })
+    },
+
+
     
   },
 
@@ -259,11 +273,12 @@ const resolvers = {
     },
 
     createOrder: async(_, {order}) => {
+      pubsub.publish('ORDER_UPDATED_SELLER', { order: order});
       return createNewOrder(order)
     },
 
     cancelOrder: async(_, {order}) => {
-      //pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
+      pubsub.publish('ORDER_UPDATED_SELLER', { order: order});
       return cancelOrderStripe(order)
     },
 
@@ -283,7 +298,6 @@ const resolvers = {
     },
 
     createReport: async(_, {report}, context, info) => {
-      
       return createReport(report)
     },
 
@@ -308,17 +322,17 @@ const resolvers = {
     },
 
     validateOrder: async(_, {order}) => {
-      pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
+      pubsub.publish('ORDER_UPDATED_SELLER', { order: order });
       return validateOrder(order)
     },
 
     refuseOrder: async(_, {order}) => {
-      pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
+      pubsub.publish('ORDER_UPDATED_BUYER', { order: order });
       return refuseOrder(order)
     },
 
     acceptOrder: async(_, {order}) => {
-      pubsub.publish('ORDER_UPDATED', { orderUpdated: order });
+      pubsub.publish('ORDER_UPDATED_BUYER', { order: order });
       return acceptOrder(order)
     },
 
@@ -333,10 +347,6 @@ const resolvers = {
     updateFirebasetoken: async(_, {userId, token}) => {
       return updateFirebasetoken(userId, token)
     },
-
-
-    
-    
 
 
     makePayout: async(_, {account_id, amount, currency, destination}) => {
