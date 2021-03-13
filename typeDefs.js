@@ -151,6 +151,7 @@ const typeDefs = gql`
     all_cards: [CreditCard]
     ibans: [BankAccount]
     is_seller: Boolean
+    notificationPermission: Boolean
   }
 
   input LocationInput {

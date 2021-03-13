@@ -102,7 +102,8 @@ var Rating = new Schema({
    birth_date: {type: BirthDate, required: true},
    shortId: {type: String, required: true},
    default_iban: {type: String},
-   is_seller : {type: Boolean, default: false}
+   is_seller : {type: Boolean, default: false},
+   notificationPermission: {type: Boolean, default: false}
  })
 
  var RoomSchema = new Schema({
